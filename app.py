@@ -217,6 +217,3 @@ def handle_exception(e):
     logger.error(f"Excepción no manejada: {str(e)}")
     return jsonify({'error': 'Error inesperado en el servidor'}), 500
 
-if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port)
