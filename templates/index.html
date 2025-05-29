@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Predicción del Precio de Vivienda</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+</head>
+<body>
+    <div class="container-fluid">
+        <!-- Header -->
+        <div class="row">
+            <div class="col-12">
+                <div class="header-section text-center py-4">
+                    <h1 class="display-4 text-white mb-0">
+                        <i class="fas fa-home me-3"></i>
+                        Predicción del Precio de Vivienda
+                    </h1>
+                    <p class="lead text-white-50 mt-2">Sistema inteligente de valuación inmobiliaria</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Panel de Control -->
+            <div class="col-lg-4">
+                <div class="control-panel">
+                    <!-- Selección de Modelo -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-robot me-2"></i>Seleccionar Modelo</h5>
+                        </div>
+                        <div class="card-body">
+                            <select id="modelSelect" class="form-select">
+                                <option value="Random Forest">Random Forest</option>
+                                <option value="Regresión Lineal">Regresión Lineal</option>
+                                <option value="XGBoost">XGBoost</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Formulario de Características -->
+                    <div class="card">
+                        <div class="card-header">
+                        <i class="fas fa-sliders-h"></i>
+                        Características de la Propiedad
+                        </div>
+                        <div class="card-body">
+                            <form id="predictionForm">
+                                <div class="form-grid">
+                            
+                                <div class="mb-3">
+                                    <label for="crim" class="form-label">Tasa de Criminalidad (crim)</label>
+                                    <input type="number" class="form-control" id="crim" name="crim" step="0.0001" value="0.00632" required>
+                                </div>
+                            
+                                <div class="mb-3">
+                                    <label for="zn" class="form-label">Zonificación Residencial (%) (zn)</label>
+                                    <input type="number" class="form-control" id="zn" name="zn" step="0.1" value="18.0" required>
+                                </div>
+                            
+                                <div class="mb-3">
+                                    <label for="indus" class="form-label">Índice de Industria No Minorista (indus)</label>
+                                    <input type="number" class="form-control" id="indus" name="indus" step="0.01" value="2.31" required>
+                                </div>
+                            
+                                <div class="mb-3">
+                                    <label for="chas" class="form-label">Cerca del Río Charles (chas: 1 = sí, 0 = no)</label>
+                                    <input type="number" class="form-control" id="chas" name="chas" min="0" max="1" value="0" required>
+                                </div>
+                            
+                                <div class="mb-3">
+                                    <label for="nox" class="form-label">Concentración de Óxidos Nítricos (nox)</label>
+                                    <input type="number" class="form-control" id="nox" name="nox" step="0.001" value="0.538" required>
+                                </div>
+                            
+                                <div class="mb-3">
+                                    <label for="rm" class="form-label">Número Promedio de Habitaciones (rm)</label>
+                                    <input type="number" class="form-control" id="rm" name="rm" step="0.01" value="6.575" required>
+                                </div>
+                            
+                                <div class="mb-3">
+                                    <label for="age" class="form-label">Edad de la Propiedad (%) (age)</label>
+                                    <input type="number" class="form-control" id="age" name="age" step="0.1" value="65.2" required>
+                                </div>
+                            
+                                <div class="mb-3">
+                                    <label for="dis" class="form-label">Distancia a Centros de Trabajo (dis)</label>
+                                    <input type="number" class="form-control" id="dis" name="dis" step="0.01" value="4.09" required>
+                                </div>
+                            
+                                <div class="mb-3">
+                                    <label for="rad" class="form-label">Índice de Accesibilidad a Autopistas (rad)</label>
+                                    <input type="number" class="form-control" id="rad" name="rad" value="1" required>
+                                </div>
+                            
+                                <div class="mb-3">
+                                    <label for="tax" class="form-label">Tasa de Impuestos a la Propiedad (tax)</label>
+                                    <input type="number" class="form-control" id="tax" name="tax" value="296" required>
+                                </div>
+                            
+                                <div class="mb-3">
+                                    <label for="ptratio" class="form-label">Ratio Alumno/Maestro (ptratio)</label>
+                                    <input type="number" class="form-control" id="ptratio" name="ptratio" step="0.1" value="15.3" required>
+                                </div>
+                            
+                                <div class="mb-3">
+                                    <label for="b" class="form-label">Índice Demográfico B (b)</label>
+                                    <input type="number" class="form-control" id="b" name="b" step="0.1" value="396.9" required>
+                                </div>
+                            
+                                <div class="mb-3">
+                                    <label for="lstat" class="form-label">Población con Bajo Estatus (%) (lstat)</label>
+                                    <input type="number" class="form-control" id="lstat" name="lstat" step="0.01" value="4.98" required>
+                                </div>
+                            
+                                </div>
+                            </form>                      
+                        </div>
+                    </div>
+
+                    <!-- Botones de Acción -->
+                    <div class="card">
+                        <div class="card-body">
+                            <button type="button" class="btn btn-primary btn-lg w-100 mb-3" id="predictBtn">
+                                <i class="fas fa-calculator me-2"></i>Predecir Precio
+                            </button>
+                            <button type="button" class="btn btn-info btn-lg w-100 mb-3" id="showMetricsBtn">
+                                <i class="fas fa-chart-bar me-2"></i>Ver Métricas
+                            </button>
+                            <button type="button" class="btn btn-success btn-lg w-100" id="showPlotsBtn">
+                                <i class="fas fa-chart-line me-2"></i>Mostrar Gráficos
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel de Resultados -->
+            <div class="col-lg-8">
+                <div class="results-panel">
+                    <!-- Resultado de Predicción -->
+                    <div class="card mb-4" id="predictionResult" style="display: none;">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0"><i class="fas fa-dollar-sign me-2"></i>Resultado de la Predicción</h5>
+                        </div>
+                        <div class="card-body text-center">
+                            <div class="price-display">
+                                <span id="predictedPrice" class="display-3 text-success fw-bold"></span>
+                            </div>
+                            <p class="lead mt-3" id="modelUsed"></p>
+                        </div>
+                    </div>
+
+                    <!-- Métricas de Modelos -->
+                    <div class="card mb-4" id="metricsResult" style="display: none;">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Rendimiento de los Modelos</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="metricsContent"></div>
+                        </div>
+                    </div>
+
+                    <!-- Gráficos -->
+                    <div class="card" id="plotsResult" style="display: none;">
+                        <div class="card-header bg-warning text-dark">
+                            <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>Gráficos de Comparación</h5>
+                        </div>
+                        <div class="card-body text-center">
+                            <div id="plotsContent"></div>
+                        </div>
+                    </div>
+
+                    <!-- Mensaje de Bienvenida -->
+                    <div class="card" id="welcomeCard">
+                        <div class="card-body text-center">
+                            <div class="welcome-content">
+                                <i class="fas fa-home display-1 text-primary mb-4"></i>
+                                <h3 class="mb-3">Bienvenido al Sistema de Predicción</h3>
+                                <p class="lead text-muted">
+                                    Complete los campos de características de la vivienda y seleccione un modelo 
+                                    de machine learning para obtener una predicción precisa del precio.
+                                </p>
+                                <div class="features-info mt-4">
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <div class="feature-item">
+                                                <i class="fas fa-brain text-primary mb-2"></i>
+                                                <p><strong>3 Modelos de IA</strong><br>Random Forest, Regresión Lineal, XGBoost</p>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="feature-item">
+                                                <i class="fas fa-chart-line text-success mb-2"></i>
+                                                <p><strong>Análisis Avanzado</strong><br>Métricas R² y MSE detalladas</p>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="feature-item">
+                                                <i class="fas fa-eye text-info mb-2"></i>
+                                                <p><strong>Visualización</strong><br>Gráficos comparativos interactivos</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div id="loadingSpinner" style="display: none;">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Cargando...</span>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
