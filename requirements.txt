@@ -29,3 +29,4 @@ tqdm
 tzdata
 xgboost
 gunicorn
+flask
