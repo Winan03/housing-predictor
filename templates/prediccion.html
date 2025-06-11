@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Predicción de Precios - Housing Predictor</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/housing.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+</head>
+<body>
+    <!-- Navegación -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/" class="nav-brand">
+                <i class="fas fa-home"></i> Predictor de Viviendas IA
+            </a>
+            <div class="nav-menu">
+                <a href="/" class="nav-link"><i class="fas fa-home"></i> Inicio</a>
+                <a href="/prediccion" class="nav-link active"><i class="fas fa-star"></i> Características</a>
+                <a href="#" class="nav-link" onclick="showMetrics()"><i class="fas fa-cog"></i> Tecnología</a>
+                <a href="#" class="nav-link" onclick="showCharts()"><i class="fas fa-chart-bar"></i> Estadísticas</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-home"></i> Predicción de Precios de Vivienda</h1>
+            <p>Configure las características de la propiedad para obtener una predicción precisa del precio</p>
+        </header>
+
+        <!-- Selector de Modelo -->
+        <div class="model-selector">
+            <h3><i class="fas fa-robot"></i> Seleccionar Modelo de IA</h3>
+            <select id="modelSelect" name="model">
+                {% for model in available_models %}
+                <option value="{{ model }}" {% if model == default_model %}selected{% endif %}>
+                    {{ model }}
+                </option>
+                {% endfor %}
+            </select>
+            <p class="feature-hint">Cada modelo utiliza diferentes algoritmos para mayor precisión</p>
+        </div>
+
+        <!-- Formulario de Características -->
+        <form id="predictionForm">
+            <!-- Ubicación y Seguridad -->
+            <div class="form-section location" data-section="location">
+                <div class="section-header">
+                    <span><i class="fas fa-map-marker-alt"></i> Ubicación y Seguridad</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="section-content active">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="crim"><i class="fas fa-exclamation-triangle"></i> Tasa de Criminalidad</label>
+                            <input type="number" id="crim" name="crim" step="0.0001" value="0.00632" required>
+                            <div class="feature-hint">{{ feature_info.crim.unit }} ({{ feature_info.crim.range }})</div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="zn"><i class="fas fa-building"></i> Zonificación Residencial (%)</label>
+                            <input type="number" id="zn" name="zn" step="0.1" value="18.0" min="0" max="100" required>
+                            <div class="feature-hint">{{ feature_info.zn.unit }} ({{ feature_info.zn.range }})</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ambiente y Calidad -->
+            <div class="form-section environment" data-section="environment">
+                <div class="section-header">
+                    <span><i class="fas fa-leaf"></i> Ambiente y Calidad</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="section-content">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="chas"><i class="fas fa-water"></i> Cerca del Río Charles</label>
+                            <select id="chas" name="chas" required>
+                                <option value="0">No (0)</option>
+                                <option value="1">Sí (1)</option>
+                            </select>
+                            <div class="feature-hint">{{ feature_info.chas.unit }}</div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="nox"><i class="fas fa-smog"></i> Concentración de Óxidos Nítricos</label>
+                            <input type="number" id="nox" name="nox" step="0.001" value="0.538" min="0.38" max="0.87" required>
+                            <div class="feature-hint">{{ feature_info.nox.unit }} ({{ feature_info.nox.range }})</div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="indus"><i class="fas fa-industry"></i> Proporción Industrial (%)</label>
+                            <input type="number" id="indus" name="indus" step="0.1" value="2.31" min="0" max="28" required>
+                            <div class="feature-hint">{{ feature_info.indus.unit }} ({{ feature_info.indus.range }})</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Características de la Vivienda -->
+            <div class="form-section housing" data-section="housing">
+                <div class="section-header">
+                    <span><i class="fas fa-home"></i> Características de la Vivienda</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="section-content">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="rm"><i class="fas fa-bed"></i> Promedio de Habitaciones</label>
+                            <input type="number" id="rm" name="rm" step="0.1" value="6.575" min="3" max="9" required>
+                            <div class="feature-hint">{{ feature_info.rm.unit }} ({{ feature_info.rm.range }})</div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="age"><i class="fas fa-calendar-alt"></i> Proporción de Unidades Viejas</label>
+                            <input type="number" id="age" name="age" step="0.1" value="65.2" min="2" max="100" required>
+                            <div class="feature-hint">{{ feature_info.age.unit }} ({{ feature_info.age.range }})</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Accesibilidad y Transporte -->
+            <div class="form-section transport" data-section="transport">
+                <div class="section-header">
+                    <span><i class="fas fa-road"></i> Accesibilidad y Transporte</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="section-content">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="dis"><i class="fas fa-map-signs"></i> Distancia a Centros de Empleo</label>
+                            <input type="number" id="dis" name="dis" step="0.1" value="4.09" min="1" max="12" required>
+                            <div class="feature-hint">{{ feature_info.dis.unit }} ({{ feature_info.dis.range }})</div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="rad"><i class="fas fa-route"></i> Índice de Accesibilidad</label>
+                            <input type="number" id="rad" name="rad" step="1" value="1" min="1" max="24" required>
+                            <div class="feature-hint">{{ feature_info.rad.unit }} ({{ feature_info.rad.range }})</div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="tax"><i class="fas fa-dollar-sign"></i> Tasa de Impuesto</label>
+                            <input type="number" id="tax" name="tax" step="1" value="296" min="187" max="711" required>
+                            <div class="feature-hint">{{ feature_info.tax.unit }} ({{ feature_info.tax.range }})</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Aspectos Socioeconómicos -->
+            <div class="form-section socioeconomic" data-section="socioeconomic">
+                <div class="section-header">
+                    <span><i class="fas fa-users"></i> Aspectos Socioeconómicos</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="section-content">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="ptratio"><i class="fas fa-graduation-cap"></i> Ratio Alumno-Profesor</label>
+                            <input type="number" id="ptratio" name="ptratio" step="0.1" value="15.3" min="12" max="22" required>
+                            <div class="feature-hint">{{ feature_info.ptratio.unit }} ({{ feature_info.ptratio.range }})</div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="b"><i class="fas fa-chart-pie"></i> Proporción de Población Negra</label>
+                            <input type="number" id="b" name="b" step="0.1" value="396.9" min="0.32" max="396.9" required>
+                            <div class="feature-hint">{{ feature_info.b.unit }} ({{ feature_info.b.range }})</div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="lstat"><i class="fas fa-chart-line"></i> % Población de Estatus Bajo</label>
+                            <input type="number" id="lstat" name="lstat" step="0.01" value="4.98" min="1.73" max="37.97" required>
+                            <div class="feature-hint">{{ feature_info.lstat.unit }} ({{ feature_info.lstat.range }})</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+
+        <!-- Botones de Acción -->
+        <div class="action-buttons">
+            <button type="button" class="btn btn-predict" onclick="predictPrice()">
+                <i class="fas fa-calculator"></i> Predecir Precio
+            </button>
+            <button type="button" class="btn btn-metrics" onclick="showMetrics()">
+                <i class="fas fa-chart-bar"></i> Ver Métricas de Modelos
+            </button>
+            <button type="button" class="btn btn-charts" onclick="showCharts()">
+                <i class="fas fa-chart-line"></i> Ver Gráficos de Comparación
+            </button>
+            <button type="button" class="btn btn-clear" onclick="clearForm()">
+                <i class="fas fa-eraser"></i> Limpiar Formulario
+            </button>
+        </div>
+
+        <!-- Resultado de Predicción -->
+        <div id="predictionResult" class="prediction-result" style="display: none;">
+            <div class="result-header">
+                <h3><i class="fas fa-home"></i> Predicción de Precio</h3>
+            </div>
+            <div class="result-content">
+                <div class="price-display">
+                    <span class="price-label">Precio Estimado:</span>
+                    <span id="predictedPrice" class="price-value">$0</span>
+                </div>
+                <div class="confidence-interval">
+                    <span class="interval-label">Rango de Confianza:</span>
+                    <span id="confidenceRange" class="interval-value">$0 - $0</span>
+                </div>
+                <div class="model-info">
+                    <span class="model-label">Modelo Utilizado:</span>
+                    <span id="usedModel" class="model-value">-</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal para Métricas -->
+        <div id="metricsModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3><i class="fas fa-chart-bar"></i> Métricas de Rendimiento de Modelos</h3>
+                    <span class="close" onclick="closeModal('metricsModal')">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <div id="metricsContent">
+                        <div class="loading">
+                            <i class="fas fa-spinner fa-spin"></i> Cargando métricas...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal para Gráficos -->
+        <div id="chartsModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3><i class="fas fa-chart-line"></i> Gráficos de Comparación</h3>
+                    <span class="close" onclick="closeModal('chartsModal')">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <div id="chartsContent">
+                        <div class="loading">
+                            <i class="fas fa-spinner fa-spin"></i> Generando gráficos...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Overlay -->
+        <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+            <div class="loading-content">
+                <div class="spinner"></div>
+                <p>Procesando predicción...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        // Variables globales
+        let currentSection = 'location';
+
+        // Inicialización
+        document.addEventListener('DOMContentLoaded', function() {
+            setupSectionToggle();
+            setupFormValidation();
+            console.log('Página de predicción cargada correctamente');
+        });
+
+        // Configurar toggle de secciones
+        function setupSectionToggle() {
+            const sectionHeaders = document.querySelectorAll('.section-header');
+            
+            sectionHeaders.forEach(header => {
+                header.addEventListener('click', function() {
+                    const section = this.parentElement;
+                    const content = section.querySelector('.section-content');
+                    const icon = this.querySelector('.fa-chevron-down');
+                    
+                    // Toggle activo
+                    content.classList.toggle('active');
+                    icon.classList.toggle('rotated');
+                });
+            });
+        }
+
+        // Configurar validación del formulario
+        function setupFormValidation() {
+            const inputs = document.querySelectorAll('input[type="number"]');
+            
+            inputs.forEach(input => {
+                input.addEventListener('input', function() {
+                    validateInput(this);
+                });
+                
+                input.addEventListener('blur', function() {
+                    validateInput(this);
+                });
+            });
+        }
+
+        // Validar entrada individual
+        function validateInput(input) {
+            const value = parseFloat(input.value);
+            const min = parseFloat(input.min);
+            const max = parseFloat(input.max);
+            
+            if (isNaN(value)) {
+                input.classList.add('error');
+                return false;
+            }
+            
+            if ((min && value < min) || (max && value > max)) {
+                input.classList.add('error');
+                return false;
+            }
+            
+            input.classList.remove('error');
+            return true;
+        }
+
+        // Función principal de predicción
+        async function predictPrice() {
+            console.log('Iniciando predicción de precio...');
+            
+            // Validar formulario
+            if (!validateForm()) {
+                showError('Por favor, corrija los errores en el formulario antes de continuar.');
+                return;
+            }
+            
+            // Mostrar loading
+            showLoading();
+            
+            try {
+                // Recopilar datos del formulario
+                const formData = collectFormData();
+                console.log('Datos del formulario:', formData);
+                
+                // Realizar predicción
+                const response = await fetch('/api/predict', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const result = await response.json();
+                console.log('Respuesta del servidor:', result);
+                
+                if (result.success) {
+                    displayPredictionResult(result);
+                } else {
+                    showError(result.error || 'Error en la predicción');
+                }
+                
+            } catch (error) {
+                console.error('Error en predicción:', error);
+                showError('Error de conexión. Por favor, intente nuevamente.');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Validar todo el formulario
+        function validateForm() {
+            const inputs = document.querySelectorAll('input[required]');
+            let isValid = true;
+            
+            inputs.forEach(input => {
+                if (!validateInput(input)) {
+                    isValid = false;
+                }
+            });
+            
+            return isValid;
+        }
+
+        // Recopilar datos del formulario
+        function collectFormData() {
+            const features = [];
+            const featureNames = ['crim', 'zn', 'indus', 'chas', 'nox', 'rm', 'age', 'dis', 'rad', 'tax', 'ptratio', 'b', 'lstat'];
+            
+            featureNames.forEach(name => {
+                const input = document.getElementById(name);
+                const value = input.type === 'select-one' ? 
+                    parseInt(input.value) : 
+                    parseFloat(input.value);
+                features.push(value);
+            });
+            
+            return {
+                features: features,
+                model: document.getElementById('modelSelect').value
+            };
+        }
+
+        // Mostrar resultado de predicción
+        function displayPredictionResult(result) {
+            const resultDiv = document.getElementById('predictionResult');
+            const priceElement = document.getElementById('predictedPrice');
+            const rangeElement = document.getElementById('confidenceRange');
+            const modelElement = document.getElementById('usedModel');
+            
+            priceElement.textContent = result.formatted_price;
+            rangeElement.textContent = `${result.confidence_interval.lower} - ${result.confidence_interval.upper}`;
+            modelElement.textContent = result.model_used;
+            
+            resultDiv.style.display = 'block';
+            resultDiv.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Mostrar métricas de modelos
+        async function showMetrics() {
+            openModal('metricsModal');
+            
+            try {
+                const response = await fetch('/api/metrics');
+                const result = await response.json();
+                
+                if (result.success) {
+                    displayMetrics(result.metrics);
+                } else {
+                    document.getElementById('metricsContent').innerHTML = 
+                        `<div class="error">Error cargando métricas: ${result.error}</div>`;
+                }
+            } catch (error) {
+                console.error('Error cargando métricas:', error);
+                document.getElementById('metricsContent').innerHTML = 
+                    '<div class="error">Error de conexión al cargar métricas</div>';
+            }
+        }
+
+        // Mostrar métricas en el modal
+        function displayMetrics(metrics) {
+            let html = '<div class="metrics-table">';
+            html += '<table><thead><tr><th>Modelo</th><th>R² Score</th><th>RMSE</th><th>MAE</th></tr></thead><tbody>';
+            
+            for (const [model, data] of Object.entries(metrics)) {
+                html += `<tr>
+                    <td>${model}</td>
+                    <td>${data.r2_test ? data.r2_test.toFixed(4) : 'N/A'}</td>
+                    <td>${data.rmse ? data.rmse.toFixed(2) : 'N/A'}</td>
+                    <td>${data.mae ? data.mae.toFixed(2) : 'N/A'}</td>
+                </tr>`;
+            }
+            
+            html += '</tbody></table></div>';
+            document.getElementById('metricsContent').innerHTML = html;
+        }
+
+        // Mostrar gráficos de comparación
+        async function showCharts() {
+            openModal('chartsModal');
+            
+            try {
+                const response = await fetch('/api/plots');
+                const result = await response.json();
+                
+                if (result.success) {
+                    displayCharts(result.plot);
+                } else {
+                    document.getElementById('chartsContent').innerHTML = 
+                        `<div class="error">Error cargando gráficos: ${result.error}</div>`;
+                }
+            } catch (error) {
+                console.error('Error cargando gráficos:', error);
+                document.getElementById('chartsContent').innerHTML = 
+                    '<div class="error">Error de conexión al cargar gráficos</div>';
+            }
+        }
+
+        // Mostrar gráficos en el modal
+        function displayCharts(plotBase64) {
+            const html = `<div class="charts-container">
+                <img src="data:image/png;base64,${plotBase64}" alt="Comparación de Modelos" class="chart-image">
+            </div>`;
+            document.getElementById('chartsContent').innerHTML = html;
+        }
+
+        // Limpiar formulario
+        function clearForm() {
+            if (confirm('¿Está seguro de que desea limpiar todos los campos del formulario?')) {
+                document.getElementById('predictionForm').reset();
+                document.getElementById('predictionResult').style.display = 'none';
+                
+                // Restablecer valores predeterminados
+                const defaults = {
+                    crim: 0.00632,
+                    zn: 18.0,
+                    indus: 2.31,
+                    chas: 0,
+                    nox: 0.538,
+                    rm: 6.575,
+                    age: 65.2,
+                    dis: 4.09,
+                    rad: 1,
+                    tax: 296,
+                    ptratio: 15.3,
+                    b: 396.9,
+                    lstat: 4.98
+                };
+                
+                for (const [field, value] of Object.entries(defaults)) {
+                    const element = document.getElementById(field);
+                    if (element) {
+                        element.value = value;
+                    }
+                }
+                
+                // Remover clases de error
+                document.querySelectorAll('.error').forEach(el => el.classList.remove('error'));
+                
+                console.log('Formulario limpiado');
+            }
+        }
+
+        // Funciones de utilidad para modales
+        function openModal(modalId) {
+            document.getElementById(modalId).style.display = 'block';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        // Funciones de utilidad para loading
+        function showLoading() {
+            document.getElementById('loadingOverlay').style.display = 'flex';
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingOverlay').style.display = 'none';
+        }
+
+        // Mostrar errores
+        function showError(message) {
+            alert('Error: ' + message);
+        }
+
+        // Cerrar modales al hacer clic fuera
+        window.onclick = function(event) {
+            const modals = document.querySelectorAll('.modal');
+            modals.forEach(modal => {
+                if (event.target === modal) {
+                    modal.style.display = 'none';
+                }
+            });
+        }
+    </script>
+</body>
+</html>

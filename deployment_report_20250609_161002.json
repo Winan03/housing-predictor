@@ -1,0 +1,144 @@
+{
+  "timestamp": "2025-06-09T16:09:54.122651",
+  "overall_status": "WARNING",
+  "checks": {
+    "python_version": {
+      "status": "PASS",
+      "version": "3.12.3",
+      "message": "Python 3.12.3 ✅"
+    },
+    "packages": {
+      "flask": {
+        "status": "INSTALLED",
+        "version": "3.1.1"
+      },
+      "pandas": {
+        "status": "INSTALLED",
+        "version": "2.3.0"
+      },
+      "numpy": {
+        "status": "INSTALLED",
+        "version": "2.3.0"
+      },
+      "sklearn": {
+        "status": "INSTALLED",
+        "version": "1.7.0"
+      },
+      "joblib": {
+        "status": "INSTALLED",
+        "version": "1.5.1"
+      },
+      "xgboost": {
+        "status": "INSTALLED",
+        "version": "3.0.2"
+      },
+      "lightgbm": {
+        "status": "INSTALLED",
+        "version": "4.6.0"
+      }
+    },
+    "file_structure": {
+      "existing_files": [
+        "app.py",
+        "model.py",
+        "requirements.txt",
+        "templates/index.html",
+        "templates/prediccion.html",
+        "static/css/style.css",
+        "static/js/script.js"
+      ],
+      "missing_files": [],
+      "status": "PASS"
+    },
+    "model_files": {
+      "existing_models": [
+        "models/metadata.pkl",
+        "models/scaler.pkl",
+        "models/feature_selector.pkl"
+      ],
+      "missing_models": [],
+      "model_info": {
+        "features_count": 50,
+        "models_trained": 10,
+        "best_model": "Voting Ensemble (R²: 0.9057)"
+      },
+      "status": "PASS"
+    },
+    "flask_app": {
+      "status": "PARTIAL",
+      "checks": {
+        "has_flask_import": true,
+        "has_app_creation": true,
+        "has_routes": true,
+        "has_main_block": false
+      },
+      "message": "Flask app parcialmente configurada"
+    },
+    "templates": {
+      "templates/index.html": {
+        "exists": true,
+        "valid_structure": true,
+        "size": 23406
+      },
+      "templates/prediccion.html": {
+        "exists": true,
+        "valid_structure": true,
+        "size": 30497
+      }
+    },
+    "static_files": {
+      "static/css/style.css": {
+        "exists": true,
+        "size": 5271,
+        "type": "CSS"
+      },
+      "static/js/script.js": {
+        "exists": true,
+        "size": 33449,
+        "type": "JavaScript"
+      }
+    },
+    "model_loading": {
+      "metadata": {
+        "status": "SUCCESS",
+        "type": "dict"
+      },
+      "scaler": {
+        "status": "SUCCESS",
+        "type": "MinMaxScaler"
+      },
+      "feature_selector": {
+        "status": "SUCCESS",
+        "type": "RFECV"
+      },
+      "sample_model": {
+        "status": "SUCCESS",
+        "type": "BayesianRidge",
+        "file": "models/bayesian_ridge_model.pkl"
+      }
+    },
+    "requirements": {
+      "status": "PARTIAL",
+      "total_requirements": 30,
+      "found_packages": [
+        "pandas",
+        "numpy",
+        "scikit-learn",
+        "joblib"
+      ],
+      "missing_packages": [
+        "flask"
+      ]
+    },
+    "integration_test": {
+      "status": "PASS",
+      "message": "Prueba de integración exitosa"
+    }
+  },
+  "errors": [],
+  "warnings": [
+    "La aplicación Flask puede no estar completamente configurada",
+    "Requirements incompletos: flask"
+  ],
+  "recommendations": []
+}

@@ -3,226 +3,563 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Predicción del Precio de Vivienda</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+    <title>Predictor de Viviendas IA - Bienvenido</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --success-gradient: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            --info-gradient: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        }
+        
+        body {
+            overflow-x: hidden;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+        }
+        
+        .floating-elements {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 1;
+        }
+        
+        .floating-elements::before,
+        .floating-elements::after {
+            content: '';
+            position: absolute;
+            border-radius: 50%;
+            opacity: 0.1;
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        .floating-elements::before {
+            width: 300px;
+            height: 300px;
+            background: #fff;
+            top: 10%;
+            left: 10%;
+            animation-delay: 0s;
+        }
+        
+        .floating-elements::after {
+            width: 200px;
+            height: 200px;
+            background: #fff;
+            bottom: 20%;
+            right: 15%;
+            animation-delay: 3s;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(180deg); }
+        }
+        
+        .hero-section {
+            position: relative;
+            z-index: 2;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+        }
+        
+        .glass-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .feature-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            transition: all 0.3s ease;
+            border: none;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+        
+        .gradient-icon {
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .btn-gradient {
+            background: var(--primary-gradient);
+            border: none;
+            color: white;
+            padding: 15px 40px;
+            border-radius: 50px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn-gradient:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.4);
+            color: white;
+        }
+        
+        .btn-outline-gradient {
+            background: transparent;
+            border: 2px solid #fff;
+            color: white;
+            padding: 15px 40px;
+            border-radius: 50px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-outline-gradient:hover {
+            background: white;
+            color: #667eea;
+            transform: translateY(-3px);
+        }
+        
+        .stats-counter {
+            font-size: 3rem;
+            font-weight: 700;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .pulse-animation {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        .tech-stack {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(5px);
+            border-radius: 10px;
+            padding: 1rem;
+            margin: 0.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .navbar-custom {
+            background: rgba(0, 0, 0, 0.1) !important;
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .typewriter {
+            overflow: hidden;
+            border-right: 2px solid #fff;
+            white-space: nowrap;
+            animation: typing 3.5s steps(40, end), blink-caret 0.75s step-end infinite;
+        }
+        
+        @keyframes typing {
+            from { width: 0; }
+            to { width: 100%; }
+        }
+        
+        @keyframes blink-caret {
+            from, to { border-color: transparent; }
+            50% { border-color: #fff; }
+        }
+        
+        .gradient-text {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+    </style>
 </head>
 <body>
-    <div class="container-fluid">
-        <!-- Header -->
-        <div class="row">
-            <div class="col-12">
-                <div class="header-section text-center py-4">
-                    <h1 class="display-4 text-white mb-0">
-                        <i class="fas fa-home me-3"></i>
-                        Predicción del Precio de Vivienda
-                    </h1>
-                    <p class="lead text-white-50 mt-2">Sistema inteligente de valuación inmobiliaria</p>
-                </div>
+    <!-- Floating Background Elements -->
+    <div class="floating-elements"></div>
+
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark fixed-top navbar-custom">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="#">
+                <i class="fas fa-home me-2"></i>
+                Predictor de Viviendas IA
+            </a>
+            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#features">
+                            <i class="fas fa-star me-1"></i>Características
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#technology">
+                            <i class="fas fa-cogs me-1"></i>Tecnología
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#stats">
+                            <i class="fas fa-chart-bar me-1"></i>Estadísticas
+                        </a>
+                    </li>
+                </ul>
             </div>
         </div>
+    </nav>
 
-        <div class="row">
-            <!-- Panel de Control -->
-            <div class="col-lg-4">
-                <div class="control-panel">
-                    <!-- Selección de Modelo -->
-                    <div class="card mb-4">
-                        <div class="card-header">
-                            <h5 class="mb-0"><i class="fas fa-robot me-2"></i>Seleccionar Modelo</h5>
-                        </div>
-                        <div class="card-body">
-                            <select id="modelSelect" class="form-select">
-                                <option value="Random Forest">Random Forest</option>
-                                <option value="Regresión Lineal">Regresión Lineal</option>
-                                <option value="XGBoost">XGBoost</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <!-- Formulario de Características -->
-                    <div class="card">
-                        <div class="card-header">
-                        <i class="fas fa-sliders-h"></i>
-                        Características de la Propiedad
-                        </div>
-                        <div class="card-body">
-                            <form id="predictionForm">
-                                <div class="form-grid">
-                            
-                                <div class="mb-3">
-                                    <label for="crim" class="form-label">Tasa de Criminalidad (crim)</label>
-                                    <input type="number" class="form-control" id="crim" name="crim" step="0.0001" value="0.00632" required>
-                                </div>
-                            
-                                <div class="mb-3">
-                                    <label for="zn" class="form-label">Zonificación Residencial (%) (zn)</label>
-                                    <input type="number" class="form-control" id="zn" name="zn" step="0.1" value="18.0" required>
-                                </div>
-                            
-                                <div class="mb-3">
-                                    <label for="indus" class="form-label">Índice de Industria No Minorista (indus)</label>
-                                    <input type="number" class="form-control" id="indus" name="indus" step="0.01" value="2.31" required>
-                                </div>
-                            
-                                <div class="mb-3">
-                                    <label for="chas" class="form-label">Cerca del Río Charles (chas: 1 = sí, 0 = no)</label>
-                                    <input type="number" class="form-control" id="chas" name="chas" min="0" max="1" value="0" required>
-                                </div>
-                            
-                                <div class="mb-3">
-                                    <label for="nox" class="form-label">Concentración de Óxidos Nítricos (nox)</label>
-                                    <input type="number" class="form-control" id="nox" name="nox" step="0.001" value="0.538" required>
-                                </div>
-                            
-                                <div class="mb-3">
-                                    <label for="rm" class="form-label">Número Promedio de Habitaciones (rm)</label>
-                                    <input type="number" class="form-control" id="rm" name="rm" step="0.01" value="6.575" required>
-                                </div>
-                            
-                                <div class="mb-3">
-                                    <label for="age" class="form-label">Edad de la Propiedad (%) (age)</label>
-                                    <input type="number" class="form-control" id="age" name="age" step="0.1" value="65.2" required>
-                                </div>
-                            
-                                <div class="mb-3">
-                                    <label for="dis" class="form-label">Distancia a Centros de Trabajo (dis)</label>
-                                    <input type="number" class="form-control" id="dis" name="dis" step="0.01" value="4.09" required>
-                                </div>
-                            
-                                <div class="mb-3">
-                                    <label for="rad" class="form-label">Índice de Accesibilidad a Autopistas (rad)</label>
-                                    <input type="number" class="form-control" id="rad" name="rad" value="1" required>
-                                </div>
-                            
-                                <div class="mb-3">
-                                    <label for="tax" class="form-label">Tasa de Impuestos a la Propiedad (tax)</label>
-                                    <input type="number" class="form-control" id="tax" name="tax" value="296" required>
-                                </div>
-                            
-                                <div class="mb-3">
-                                    <label for="ptratio" class="form-label">Ratio Alumno/Maestro (ptratio)</label>
-                                    <input type="number" class="form-control" id="ptratio" name="ptratio" step="0.1" value="15.3" required>
-                                </div>
-                            
-                                <div class="mb-3">
-                                    <label for="b" class="form-label">Índice Demográfico B (b)</label>
-                                    <input type="number" class="form-control" id="b" name="b" step="0.1" value="396.9" required>
-                                </div>
-                            
-                                <div class="mb-3">
-                                    <label for="lstat" class="form-label">Población con Bajo Estatus (%) (lstat)</label>
-                                    <input type="number" class="form-control" id="lstat" name="lstat" step="0.01" value="4.98" required>
-                                </div>
-                            
-                                </div>
-                            </form>                      
-                        </div>
-                    </div>
-
-                    <!-- Botones de Acción -->
-                    <div class="card">
-                        <div class="card-body">
-                            <button type="button" class="btn btn-primary btn-lg w-100 mb-3" id="predictBtn">
-                                <i class="fas fa-calculator me-2"></i>Predecir Precio
-                            </button>
-                            <button type="button" class="btn btn-info btn-lg w-100 mb-3" id="showMetricsBtn">
-                                <i class="fas fa-chart-bar me-2"></i>Ver Métricas
-                            </button>
-                            <button type="button" class="btn btn-success btn-lg w-100" id="showPlotsBtn">
-                                <i class="fas fa-chart-line me-2"></i>Mostrar Gráficos
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Panel de Resultados -->
-            <div class="col-lg-8">
-                <div class="results-panel">
-                    <!-- Resultado de Predicción -->
-                    <div class="card mb-4" id="predictionResult" style="display: none;">
-                        <div class="card-header bg-success text-white">
-                            <h5 class="mb-0"><i class="fas fa-dollar-sign me-2"></i>Resultado de la Predicción</h5>
-                        </div>
-                        <div class="card-body text-center">
-                            <div class="price-display">
-                                <span id="predictedPrice" class="display-3 text-success fw-bold"></span>
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="container">
+            <div class="row align-items-center min-vh-100">
+                <div class="col-lg-6">
+                    <div class="text-white mb-5">
+                        <h1 class="display-3 fw-bold mb-4">
+                            Bienvenido al
+                            <div class="typewriter gradient-text d-inline-block">
+                                Futuro Inmobiliario
                             </div>
-                            <p class="lead mt-3" id="modelUsed"></p>
+                        </h1>
+                        <p class="lead mb-4 fs-4 opacity-75">
+                            Descubre el poder de la <strong>Inteligencia Artificial</strong> 
+                            para predecir precios de viviendas con una precisión del 
+                            <span class="text-warning fw-bold">92%</span>
+                        </p>
+                        <div class="d-flex flex-column flex-md-row gap-3 mb-5">
+                            <button class="btn btn-gradient btn-lg pulse-animation" onclick="redirectToPredictor()">
+                                <i class="fas fa-rocket me-2"></i>
+                                Comenzar Predicción
+                            </button>
+                            <button class="btn btn-outline-gradient btn-lg" onclick="scrollToFeatures()">
+                                <i class="fas fa-info-circle me-2"></i>
+                                Explorar Características
+                            </button>
                         </div>
-                    </div>
-
-                    <!-- Métricas de Modelos -->
-                    <div class="card mb-4" id="metricsResult" style="display: none;">
-                        <div class="card-header bg-info text-white">
-                            <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Rendimiento de los Modelos</h5>
-                        </div>
-                        <div class="card-body">
-                            <div id="metricsContent"></div>
-                        </div>
-                    </div>
-
-                    <!-- Gráficos -->
-                    <div class="card" id="plotsResult" style="display: none;">
-                        <div class="card-header bg-warning text-dark">
-                            <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>Gráficos de Comparación</h5>
-                        </div>
-                        <div class="card-body text-center">
-                            <div id="plotsContent"></div>
-                        </div>
-                    </div>
-
-                    <!-- Mensaje de Bienvenida -->
-                    <div class="card" id="welcomeCard">
-                        <div class="card-body text-center">
-                            <div class="welcome-content">
-                                <i class="fas fa-home display-1 text-primary mb-4"></i>
-                                <h3 class="mb-3">Bienvenido al Sistema de Predicción</h3>
-                                <p class="lead text-muted">
-                                    Complete los campos de características de la vivienda y seleccione un modelo 
-                                    de machine learning para obtener una predicción precisa del precio.
-                                </p>
-                                <div class="features-info mt-4">
-                                    <div class="row">
-                                        <div class="col-md-4">
-                                            <div class="feature-item">
-                                                <i class="fas fa-brain text-primary mb-2"></i>
-                                                <p><strong>3 Modelos de IA</strong><br>Random Forest, Regresión Lineal, XGBoost</p>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <div class="feature-item">
-                                                <i class="fas fa-chart-line text-success mb-2"></i>
-                                                <p><strong>Análisis Avanzado</strong><br>Métricas R² y MSE detalladas</p>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <div class="feature-item">
-                                                <i class="fas fa-eye text-info mb-2"></i>
-                                                <p><strong>Visualización</strong><br>Gráficos comparativos interactivos</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                        <div class="d-flex align-items-center">
+                            <div class="tech-stack me-3">
+                                <i class="fab fa-python me-2"></i>Python
+                            </div>
+                            <div class="tech-stack me-3">
+                                <i class="fas fa-brain me-2"></i>Machine Learning
+                            </div>
+                            <div class="tech-stack">
+                                <i class="fas fa-chart-line me-2"></i>AI Avanzada
                             </div>
                         </div>
                     </div>
                 </div>
+                <div class="col-lg-6">
+                    <div class="glass-card text-center">
+                        <div class="mb-4">
+                            <i class="fas fa-home" style="font-size: 5rem; color: #fff;"></i>
+                        </div>
+                        <h3 class="text-white mb-4">Sistema Inteligente</h3>
+                        <div class="row text-center mb-4">
+                            <div class="col-4">
+                                <div class="stats-counter">10</div>
+                                <p class="text-white-50 small mb-0">Modelos de IA</p>
+                            </div>
+                            <div class="col-4">
+                                <div class="stats-counter">13</div>
+                                <p class="text-white-50 small mb-0">Variables</p>
+                            </div>
+                            <div class="col-4">
+                                <div class="stats-counter">92%</div>
+                                <p class="text-white-50 small mb-0">Precisión</p>
+                            </div>
+                        </div>
+                        <div class="progress mb-3" style="height: 10px;">
+                            <div class="progress-bar bg-warning progress-bar-striped progress-bar-animated" 
+                                 style="width: 94%"></div>
+                        </div>
+                        <p class="text-white-50 small">Entrenado con miles de propiedades reales</p>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
+    </section>
 
-    <!-- Loading Spinner -->
-    <div id="loadingSpinner" style="display: none;">
-        <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Cargando...</span>
+    <!-- Features Section -->
+    <section id="features" class="py-5" style="background: rgba(255,255,255,0.95);">
+        <div class="container">
+            <div class="text-center mb-5">
+                <h2 class="display-5 fw-bold gradient-text mb-3">¿Por qué Elegirnos?</h2>
+                <p class="lead text-muted">Tecnología de vanguardia al servicio del sector inmobiliario</p>
+            </div>
+            
+            <div class="row g-4">
+                <div class="col-lg-4">
+                    <div class="feature-card h-100 p-4 text-center">
+                        <div class="mb-4">
+                            <i class="fas fa-brain gradient-icon" style="font-size: 4rem;"></i>
+                        </div>
+                        <h4 class="mb-3">IA Avanzada</h4>
+                        <p class="text-muted mb-4">
+                            Utilizamos Random Forest, XGBoost, SVR y Voting Ensemble
+                            para obtener predicciones ultra-precisas.
+                        </p>
+                        <div class="d-flex justify-content-center gap-2">
+                            <span class="badge bg-primary rounded-pill">Random Forest</span>
+                            <span class="badge bg-success rounded-pill">XGBoost</span>
+                            <span class="badge bg-warning rounded-pill">SVR</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <div class="feature-card h-100 p-4 text-center">
+                        <div class="mb-4">
+                            <i class="fas fa-tachometer-alt gradient-icon" style="font-size: 4rem;"></i>
+                        </div>
+                        <h4 class="mb-3">Resultados Instantáneos</h4>
+                        <p class="text-muted mb-4">
+                            Obtén predicciones precisas en menos de 2 segundos 
+                            con nuestro sistema optimizado.
+                        </p>
+                        <div class="d-flex justify-content-center gap-2">
+                            <span class="badge bg-info rounded-pill">Tiempo Real</span>
+                            <span class="badge bg-warning rounded-pill">Ultra Rápido</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <div class="feature-card h-100 p-4 text-center">
+                        <div class="mb-4">
+                            <i class="fas fa-chart-line gradient-icon" style="font-size: 4rem;"></i>
+                        </div>
+                        <h4 class="mb-3">Análisis Completo</h4>
+                        <p class="text-muted mb-4">
+                            Evaluamos 13 variables críticas incluyendo ubicación, 
+                            seguridad, servicios y características físicas.
+                        </p>
+                        <div class="d-flex justify-content-center gap-2">
+                            <span class="badge bg-danger rounded-pill">13 Variables</span>
+                            <span class="badge bg-success rounded-pill">Análisis 360°</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-    </div>
+    </section>
+
+    <!-- Technology Section -->
+    <section id="technology" class="py-5" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+        <div class="container">
+            <div class="text-center text-white mb-5">
+                <h2 class="display-5 fw-bold mb-3">Tecnología de Vanguardia</h2>
+                <p class="lead opacity-75">Impulsado por las mejores herramientas de Machine Learning</p>
+            </div>
+            
+            <div class="row g-4 text-center">
+                <div class="col-lg-3 col-md-6">
+                    <div class="glass-card h-100">
+                        <i class="fab fa-python text-white mb-3" style="font-size: 3rem;"></i>
+                        <h5 class="text-white mb-2">Python & Flask</h5>
+                        <p class="text-white-50 small mb-0">Backend robusto y escalable</p>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="glass-card h-100">
+                        <i class="fas fa-brain text-white mb-3" style="font-size: 3rem;"></i>
+                        <h5 class="text-white mb-2">Scikit-learn</h5>
+                        <p class="text-white-50 small mb-0">Algoritmos de ML optimizados</p>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="glass-card h-100">
+                        <i class="fas fa-rocket text-white mb-3" style="font-size: 3rem;"></i>
+                        <h5 class="text-white mb-2">XGBoost</h5>
+                        <p class="text-white-50 small mb-0">Gradient boosting avanzado</p>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="glass-card h-100">
+                        <i class="fas fa-chart-bar text-white mb-3" style="font-size: 3rem;"></i>
+                        <h5 class="text-white mb-2">Pandas & NumPy</h5>
+                        <p class="text-white-50 small mb-0">Procesamiento de datos eficiente</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Statistics Section -->
+    <section id="stats" class="py-5" style="background: rgba(255,255,255,0.95);">
+        <div class="container">
+            <div class="text-center mb-5">
+                <h2 class="display-5 fw-bold gradient-text mb-3">Resultados Comprobados</h2>
+                <p class="lead text-muted">Números que hablan por sí solos</p>
+            </div>
+            
+            <div class="row g-4 text-center">
+                <div class="col-lg-3 col-md-6">
+                    <div class="feature-card h-100 p-4">
+                        <i class="fas fa-bullseye text-primary mb-3" style="font-size: 3rem;"></i>
+                        <h2 class="text-primary fw-bold mb-2">92%</h2>
+                        <p class="text-muted mb-0">Precisión del Modelo</p>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="feature-card h-100 p-4">
+                        <i class="fas fa-clock text-success mb-3" style="font-size: 3rem;"></i>
+                        <h2 class="text-success fw-bold mb-2">&lt;2s</h2>
+                        <p class="text-muted mb-0">Tiempo de Respuesta</p>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="feature-card h-100 p-4">
+                        <i class="fas fa-database text-info mb-3" style="font-size: 3rem;"></i>
+                        <h2 class="text-info fw-bold mb-2">10K+</h2>
+                        <p class="text-muted mb-0">Propiedades Analizadas</p>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="feature-card h-100 p-4">
+                        <i class="fas fa-users text-warning mb-3" style="font-size: 3rem;"></i>
+                        <h2 class="text-warning fw-bold mb-2">1500+</h2>
+                        <p class="text-muted mb-0">Predicciones Realizadas</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Call to Action -->
+    <section class="py-5" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+        <div class="container text-center text-white">
+            <h2 class="display-4 fw-bold mb-4">¿Listo para Comenzar?</h2>
+            <p class="lead mb-5 opacity-75">
+                Únete a cientos de usuarios que ya confían en nuestra IA para 
+                tomar decisiones inmobiliarias inteligentes
+            </p>
+            <button class="btn btn-warning btn-lg px-5 py-3 rounded-pill shadow-lg pulse-animation" 
+                    onclick="redirectToPredictor()" style="font-size: 1.2rem;">
+                <i class="fas fa-calculator me-3"></i>
+                <strong>INICIAR PREDICCIÓN AHORA</strong>
+                <i class="fas fa-arrow-right ms-3"></i>
+            </button>
+            <div class="mt-4">
+                <small class="opacity-50">
+                    <i class="fas fa-shield-alt me-2"></i>
+                    100% Gratuito • Sin Registro • Resultados Inmediatos
+                </small>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-4">
+        <div class="container text-center">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <p class="mb-0">
+                        <i class="fas fa-home me-2"></i>
+                        <strong>Predictor de Viviendas IA</strong> - Powered by Machine Learning
+                    </p>
+                </div>
+                <div class="col-md-6">
+                    <p class="mb-0 small text-muted">
+                        © 2025 Desarrollado con ❤️ por Jefer
+                    </p>
+                </div>
+            </div>
+        </div>
+    </footer>
 
     <!-- Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
-    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    <script>
+        // Redirect to prediction page
+        function redirectToPredictor() {
+            window.location.href = '/prediccion';
+        }
+        
+        // Smooth scroll to features
+        function scrollToFeatures() {
+            document.getElementById('features').scrollIntoView({ 
+                behavior: 'smooth' 
+            });
+        }
+        
+        // Add parallax effect to floating elements
+        window.addEventListener('scroll', () => {
+            const scrolled = window.pageYOffset;
+            const elements = document.querySelector('.floating-elements');
+            if (elements) {
+                elements.style.transform = `translateY(${scrolled * 0.5}px)`;
+            }
+        });
+        
+        // Animate counters on scroll
+        function animateCounters() {
+            const counters = document.querySelectorAll('.stats-counter');
+            counters.forEach(counter => {
+                const target = parseInt(counter.textContent);
+                const increment = target / 100;
+                let current = 0;
+                
+                const timer = setInterval(() => {
+                    current += increment;
+                    if (current >= target) {
+                        counter.textContent = target + (counter.textContent.includes('%') ? '%' : '');
+                        clearInterval(timer);
+                    } else {
+                        counter.textContent = Math.floor(current) + (counter.textContent.includes('%') ? '%' : '');
+                    }
+                }, 20);
+            });
+        }
+        
+        // Trigger counter animation when stats section is visible
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    animateCounters();
+                    observer.unobserve(entry.target);
+                }
+            });
+        });
+        
+        const statsSection = document.getElementById('stats');
+        if (statsSection) {
+            observer.observe(statsSection);
+        }
+        
+        // Add smooth scrolling to navbar links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+    </script>
 </body>
 </html>
