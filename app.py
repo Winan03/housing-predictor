@@ -8,12 +8,15 @@ import base64
 import io
 from datetime import datetime
 import matplotlib
-matplotlib.use('Agg') 
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
 import warnings
 warnings.filterwarnings('ignore')
+
+# Importar la clase FAQChatbot desde chatbot.py
+from chatbot import FAQChatbot # Asegúrate de que chatbot.py esté en el mismo directorio
 
 # Configurar logging
 logging.basicConfig(level=logging.INFO)
@@ -276,7 +279,7 @@ class HousingPredictor:
             for bar, score in zip(bars1, r2_scores):
                 height = bar.get_height()
                 ax1.text(bar.get_x() + bar.get_width()/2., height + 0.01,
-                        f'{score:.3f}', ha='center', va='bottom', fontweight='bold')
+                         f'{score:.3f}', ha='center', va='bottom', fontweight='bold')
             
             # Gráfico de RMSE
             bars2 = ax2.bar(model_names, rmse_scores, color='lightcoral', alpha=0.8)
@@ -288,7 +291,7 @@ class HousingPredictor:
             for bar, score in zip(bars2, rmse_scores):
                 height = bar.get_height()
                 ax2.text(bar.get_x() + bar.get_width()/2., height + 0.1,
-                        f'{score:.2f}', ha='center', va='bottom', fontweight='bold')
+                         f'{score:.2f}', ha='center', va='bottom', fontweight='bold')
             
             plt.tight_layout()
             
@@ -312,6 +315,9 @@ class HousingPredictor:
 # Inicializar el predictor globalmente
 predictor = HousingPredictor()
 app_ready = False
+
+# Inicializar el chatbot globalmente
+chatbot = FAQChatbot()
 
 def initialize_app():
     """Inicializar la aplicación cargando los modelos"""
@@ -349,7 +355,7 @@ def index():
         if not app_ready:
             logger.warning("Intento de acceso con modelos no cargados")
             return render_template('error.html', 
-                                 error="Los modelos de predicción no están disponibles. Por favor, contacte al administrador."), 503
+                                   error="Los modelos de predicción no están disponibles. Por favor, contacte al administrador."), 503
         
         # Información para mostrar en la página de bienvenida
         context = {
@@ -364,7 +370,7 @@ def index():
     except Exception as e:
         logger.error(f"Error en página principal: {str(e)}")
         return render_template('error.html', 
-                             error=f"Error al cargar la aplicación: {str(e)}"), 500
+                               error=f"Error al cargar la aplicación: {str(e)}"), 500
 
 @app.route('/prediccion')
 def prediccion_page():
@@ -373,7 +379,7 @@ def prediccion_page():
         if not app_ready:
             logger.warning("Intento de acceso a predicción con modelos no cargados")
             return render_template('error.html', 
-                                 error="Los modelos de predicción no están disponibles. Por favor, contacte al administrador."), 503
+                                   error="Los modelos de predicción no están disponibles. Por favor, contacte al administrador."), 503
         
         # Obtener información necesaria para el formulario
         feature_names = predictor.get_feature_names()
@@ -412,7 +418,7 @@ def prediccion_page():
     except Exception as e:
         logger.error(f"Error en página de predicción: {str(e)}")
         return render_template('error.html', 
-                             error=f"Error al cargar la página de predicción: {str(e)}"), 500
+                               error=f"Error al cargar la página de predicción: {str(e)}"), 500
 
 # =============================================================================
 # API ENDPOINTS
@@ -492,6 +498,24 @@ def api_predict():
             'success': False,
             'error': f'Error en predicción: {str(e)}'
         }), 400
+
+@app.route('/api/chat', methods=['POST'])
+def api_chat():
+    """API endpoint para interactuar con el chatbot"""
+    try:
+        data = request.json
+        user_message = data.get('message')
+
+        if not user_message:
+            return jsonify({'success': False, 'response': 'No se recibió ningún mensaje.'}), 400
+
+        chatbot_response = chatbot.get_response(user_message)
+        return jsonify({'success': True, 'response': chatbot_response})
+
+    except Exception as e:
+        logger.error(f"Error en la API del chatbot: {str(e)}")
+        return jsonify({'success': False, 'response': 'Ocurrió un error interno al procesar tu mensaje.'}), 500
+
 
 @app.route('/api/models')
 def api_models():

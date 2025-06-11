@@ -6,6 +6,8 @@
     <title>Predictor de Viviendas IA - Bienvenido</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <!-- Enlace al archivo CSS del chatbot -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/chatbot.css') }}">
     <style>
         :root {
             --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -58,6 +60,7 @@
         @keyframes float {
             0%, 100% { transform: translateY(0px) rotate(0deg); }
             50% { transform: translateY(-20px) rotate(180deg); }
+            100% { transform: translateY(0px) rotate(360deg); } /* Added 360deg rotation */
         }
         
         .hero-section {
@@ -488,6 +491,29 @@
         </div>
     </footer>
 
+    <!-- Contenedor del Chatbot -->
+    <div class="chatbot-container hidden" id="chatbot-container">
+        <div class="chatbot-header">
+            <h3>Asistente IA</h3>
+            <button class="close-button" id="close-chatbot"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="chatbot-messages" id="chatbot-messages">
+            <!-- Los mensajes se insertarán aquí por JavaScript -->
+            <div class="message-bubble bot">
+                ¡Hola! Soy el asistente de Predictor de Viviendas IA. ¿En qué puedo ayudarte hoy?
+            </div>
+        </div>
+        <div class="chatbot-input-area">
+            <input type="text" id="chatbot-input" placeholder="Escribe tu pregunta..." autocomplete="off">
+            <button id="send-button"><i class="fas fa-paper-plane"></i></button>
+        </div>
+    </div>
+
+    <!-- Botón flotante para abrir/cerrar -->
+    <button class="chatbot-toggle-button" id="chatbot-toggle">
+        <i class="fas fa-comments"></i>
+    </button>
+
     <!-- Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
     <script>
@@ -560,6 +586,124 @@
                 }
             });
         });
+
+        // =====================================
+        // Chatbot Functionality
+        // =====================================
+        const chatbotContainer = document.getElementById('chatbot-container');
+        const chatbotToggle = document.getElementById('chatbot-toggle');
+        const closeChatbotButton = document.getElementById('close-chatbot');
+        const chatbotMessages = document.getElementById('chatbot-messages');
+        const chatbotInput = document.getElementById('chatbot-input');
+        const sendButton = document.getElementById('send-button');
+
+        // Toggle chatbot visibility
+        chatbotToggle.addEventListener('click', () => {
+            chatbotContainer.classList.toggle('hidden');
+            // Muestra u oculta el botón flotante dependiendo del estado del chatbot
+            if (chatbotContainer.classList.contains('hidden')) {
+                chatbotToggle.classList.remove('hidden'); 
+            } else {
+                chatbotToggle.classList.add('hidden'); 
+                chatbotInput.focus(); // Enfoca el input al abrir el chatbot
+                // Removed initial scrollToBottom here as addMessage will handle it
+            }
+        });
+
+        closeChatbotButton.addEventListener('click', () => {
+            chatbotContainer.classList.add('hidden');
+            chatbotToggle.classList.remove('hidden'); // Muestra el botón flotante al cerrar el chatbot
+        });
+
+        // Add a message to the chat display
+        function addMessage(message, sender) {
+            const messageBubble = document.createElement('div');
+            messageBubble.classList.add('message-bubble', sender);
+            
+            // Allow for markdown-like bolding (e.g., **text**)
+            let formattedMessage = message.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            messageBubble.innerHTML = formattedMessage; // Use innerHTML for formatting
+
+            chatbotMessages.appendChild(messageBubble);
+            
+            // Scroll the newly added message into view
+            // Using requestAnimationFrame to ensure the scroll happens after render
+            requestAnimationFrame(() => {
+                messageBubble.scrollIntoView({ behavior: 'smooth', block: 'end' }); 
+            });
+        }
+
+        // Scroll to the bottom of the messages div (less critical with scrollIntoView on elements)
+        // function scrollToBottom() {
+        //     chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
+        // }
+
+        // Send message to chatbot API
+        async function sendMessage() {
+            const userMessage = chatbotInput.value.trim();
+            if (userMessage === '') return;
+
+            addMessage(userMessage, 'user');
+            chatbotInput.value = ''; // Clear input
+
+            // Add loading indicator
+            const loadingIndicator = document.createElement('div');
+            loadingIndicator.classList.add('loading-indicator');
+            loadingIndicator.textContent = 'Escribiendo...';
+            chatbotMessages.appendChild(loadingIndicator);
+            // No explicit scroll here, as addMessage for the user's message just handled it.
+            // The next scroll will happen when the bot's response is added.
+
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ message: userMessage })
+                });
+
+                const data = await response.json();
+                
+                // Remove loading indicator
+                if (chatbotMessages.contains(loadingIndicator)) {
+                    chatbotMessages.removeChild(loadingIndicator);
+                }
+
+                if (data.success) {
+                    addMessage(data.response, 'bot'); // Bot message added, this call handles its own scrollIntoView
+                } else {
+                    addMessage('Error: ' + (data.response || 'No se pudo obtener una respuesta.'), 'bot');
+                }
+            } catch (error) {
+                console.error('Error al comunicarse con el chatbot:', error);
+                // Remove loading indicator even on error
+                if (chatbotMessages.contains(loadingIndicator)) {
+                    chatbotMessages.removeChild(loadingIndicator);
+                }
+                addMessage('Lo siento, hubo un problema al conectar con el asistente. Intenta de nuevo más tarde.', 'bot');
+            }
+        }
+
+        // Event listeners for sending messages
+        sendButton.addEventListener('click', sendMessage);
+        chatbotInput.addEventListener('keypress', (event) => {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        // Initial bot greeting
+        window.addEventListener('load', () => {
+            // The initial bot greeting is already in the HTML.
+            // Ensure it scrolls to the bottom on load for initial message
+            // Find the initial bot message and scroll it into view
+            const initialBotMessage = document.querySelector('.chatbot-messages .message-bubble.bot');
+            if (initialBotMessage) {
+                initialBotMessage.scrollIntoView({ behavior: 'smooth', block: 'end' });
+            }
+        });
+
     </script>
 </body>
 </html>

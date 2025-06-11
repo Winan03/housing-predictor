@@ -1,0 +1,294 @@
+/* chatbot.css */
+
+/* Variables CSS para consistencia de colores y sombras */
+:root {
+    --primary-gradient-start: #667eea;
+    --primary-gradient-end: #764ba2;
+    --secondary-gradient-start: #ffc107; /* Amarillo de advertencia de Bootstrap */
+    --secondary-gradient-end: #ffa000;
+    --dark-bg: #212529;
+    --light-bg: rgba(255, 255, 255, 0.95);
+    --glass-bg: rgba(255, 255, 255, 0.15); /* Fondo para efecto glassmorphism */
+    --glass-border: rgba(255, 255, 255, 0.3); /* Borde para efecto glassmorphism */
+    --text-color-light: #f8f9fa;
+    --text-color-dark: #343a40;
+    --shadow-light: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
+    --shadow-heavy: 0 10px 20px rgba(0, 0, 0, 0.19), 0 6px 6px rgba(0, 0, 0, 0.23);
+    --border-radius-large: 1.25rem; /* 20px */
+    --border-radius-medium: 0.75rem; /* 12px */
+    --font-inter: 'Inter', sans-serif;
+}
+
+/* Asegurar que la fuente se aplique a los elementos del chatbot */
+/* Se ha quitado el !important de aquí y se añade específicamente a los iconos FA */
+.chatbot-container,
+.chatbot-container * {
+    font-family: var(--font-inter); 
+    box-sizing: border-box; /* Asegura un modelo de caja consistente */
+}
+
+/* IMPORTANTE: Regla específica para los íconos de Font Awesome dentro del chatbot */
+/* Esto asegura que los íconos usen la fuente correcta de Font Awesome */
+.chatbot-container .fas, /* Para estilos solid (fas) */
+.chatbot-container .far, /* Para estilos regular (far) */
+.chatbot-container .fab, /* Para estilos brands (fab) */
+.chatbot-container .fa-solid, /* Para estilos solid modernos */
+.chatbot-container .fa-regular, /* Para estilos regular modernos */
+.chatbot-container .fa-brands /* Para estilos brands modernos */
+{
+    font-family: "Font Awesome 6 Free", "Font Awesome 6 Brands", sans-serif !important; /* Forzar la fuente de Font Awesome */
+    font-weight: 900 !important; /* Para íconos fas (solid) como paper-plane y times */
+    /* Si usas iconos 'regular' (far), necesitarías un font-weight: 400; */
+}
+
+
+/* Contenedor principal del chatbot */
+.chatbot-container {
+    position: fixed !important; /* ¡FORZANDO POSICIONAMIENTO FIJO PARA DEBUGGING! */
+    bottom: 20px !important;
+    right: 20px !important;
+    width: 350px !important; /* Ancho fijo para desktop */
+    height: 500px !important; /* Alto fijo */
+    background-color: var(--glass-bg);
+    backdrop-filter: blur(10px); /* Efecto glassmorphism */
+    border: 1px solid var(--glass-border);
+    border-radius: var(--border-radius-large);
+    box-shadow: var(--shadow-heavy);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; /* Asegura que el contenido no se salga */
+    z-index: 1050 !important; /* Por encima de la mayoría de los elementos */
+    transition: all 0.3s ease-in-out; /* Transición suave para apertura/cierre */
+}
+
+/* Ocultar el chatbot */
+.chatbot-container.hidden {
+    opacity: 0 !important;
+    pointer-events: none !important; /* No permite interacciones cuando está oculto */
+    transform: translateY(20px) scale(0.95) !important;
+}
+
+/* Botón flotante para abrir/cerrar el chatbot */
+.chatbot-toggle-button {
+    position: fixed !important; /* ¡FORZANDO POSICIONAMIENTO FIJO PARA DEBUGGING! */
+    bottom: 20px !important;
+    right: 20px !important;
+    background: linear-gradient(135deg, var(--primary-gradient-start), var(--primary-gradient-end));
+    color: var(--text-color-light);
+    border: none;
+    border-radius: 50%; /* Botón redondo */
+    width: 60px !important;
+    height: 60px !important;
+    font-size: 1.8rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    box-shadow: var(--shadow-heavy);
+    z-index: 1060 !important; /* Por encima del contenedor del chatbot */
+    transition: all 0.3s ease-in-out;
+}
+
+.chatbot-toggle-button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 14px 28px rgba(0,0,0,0.25), 0 10px 10px rgba(0,0,0,0.22);
+}
+
+.chatbot-toggle-button.hidden {
+    opacity: 0 !important;
+    pointer-events: none !important; /* No permite interacciones cuando está oculto */
+}
+
+
+/* Encabezado del chatbot */
+.chatbot-header {
+    background: linear-gradient(90deg, var(--primary-gradient-start), var(--primary-gradient-end));
+    color: var(--text-color-light);
+    padding: 15px 20px;
+    border-top-left-radius: var(--border-radius-large);
+    border-top-right-radius: var(--border-radius-large);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: var(--shadow-light);
+}
+
+.chatbot-header h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: bold;
+}
+
+.chatbot-header .close-button {
+    background: transparent;
+    border: none;
+    color: var(--text-color-light);
+    font-size: 1.5rem;
+    cursor: pointer;
+    opacity: 0.8;
+    transition: opacity 0.2s ease;
+}
+
+.chatbot-header .close-button:hover {
+    opacity: 1;
+}
+
+/* Área de mensajes */
+.chatbot-messages {
+    flex-grow: 1;
+    padding: 15px;
+    overflow-y: auto; /* Permite scroll si hay muchos mensajes */
+    background-color: rgba(0, 0, 0, 0.1); /* Fondo sutil para el área de mensajes */
+    scroll-behavior: smooth; /* Desplazamiento suave al añadir mensajes */
+}
+
+.chatbot-messages::-webkit-scrollbar {
+    width: 8px;
+}
+
+.chatbot-messages::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.3);
+    border-radius: 4px;
+}
+
+.chatbot-messages::-webkit-scrollbar-track {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Estilo para mensajes individuales */
+.message-bubble {
+    max-width: 80%;
+    margin-bottom: 10px;
+    padding: 10px 15px;
+    border-radius: var(--border-radius-medium);
+    font-size: 0.95rem;
+    line-height: 1.4;
+    word-wrap: break-word; /* Rompe palabras largas */
+}
+
+.message-bubble.user {
+    background: linear-gradient(135deg, #1e3a8a, #3b82f6); /* Azul vibrante */
+    color: var(--text-color-light);
+    margin-left: auto; /* Alinea a la derecha */
+    border-bottom-right-radius: 5px; /* Pequeño ajuste para la esquina */
+}
+
+.message-bubble.bot {
+    background-color: var(--light-bg); /* Fondo blanco/claro */
+    color: var(--text-color-dark);
+    margin-right: auto; /* Alinea a la izquierda */
+    border-bottom-left-radius: 5px; /* Pequeño ajuste para la esquina */
+    box-shadow: var(--shadow-light);
+}
+
+/* Área de entrada */
+.chatbot-input-area {
+    display: flex;
+    padding: 15px;
+    border-top: 1px solid var(--glass-border);
+    background-color: rgba(0, 0, 0, 0.2); /* Fondo ligeramente más oscuro para el input */
+}
+
+.chatbot-input-area input[type="text"] {
+    flex-grow: 1;
+    padding: 10px 15px;
+    border: 1px solid var(--glass-border);
+    border-radius: var(--border-radius-medium);
+    background-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-color-dark) !important; /* Texto de input más oscuro */
+    font-size: 1rem;
+    outline: none;
+    margin-right: 10px;
+    transition: border-color 0.2s ease;
+}
+
+.chatbot-input-area input[type="text"]::placeholder {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.chatbot-input-area input[type="text"]:focus {
+    border-color: var(--secondary-gradient-start);
+}
+
+.chatbot-input-area button {
+    background: linear-gradient(135deg, var(--secondary-gradient-start), var(--secondary-gradient-end));
+    color: var(--text-color-dark);
+    border: none;
+    border-radius: var(--border-radius-medium);
+    padding: 10px 15px;
+    cursor: pointer;
+    font-size: 1rem; /* Asegura el tamaño base del texto/icono */
+    font-weight: bold;
+    transition: all 0.2s ease;
+    box-shadow: var(--shadow-light);
+}
+
+.chatbot-input-area button:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+}
+
+/* Indicador de carga */
+.loading-indicator {
+    text-align: center;
+    padding: 10px;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.9rem;
+}
+
+/* Estilos responsivos */
+@media (max-width: 768px) {
+    .chatbot-container {
+        width: 90% !important; /* Más ancho en móviles */
+        height: 70vh !important; /* Ocupa más altura de la pantalla */
+        bottom: 15px !important;
+        right: 5% !important;
+        left: 5% !important; /* Centrado */
+    }
+
+    .chatbot-toggle-button {
+        width: 50px !important;
+        height: 50px !important;
+        font-size: 1.5rem;
+        bottom: 15px !important;
+        right: 15px !important;
+    }
+
+    .message-bubble {
+        max-width: 90%; /* Mensajes un poco más anchos */
+    }
+
+    .chatbot-header h3 {
+        font-size: 1.1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .chatbot-container {
+        width: 95% !important;
+        height: 75vh !important;
+        bottom: 10px !important;
+        right: 2.5% !important;
+        left: 2.5% !important;
+        border-radius: 1rem;
+    }
+
+    .chatbot-toggle-button {
+        bottom: 10px !important;
+        right: 10px !important;
+    }
+
+    .chatbot-header {
+        padding: 12px 15px;
+    }
+
+    .chatbot-input-area {
+        padding: 10px;
+    }
+
+    .chatbot-input-area input[type="text"],
+    .chatbot-input-area button {
+        font-size: 0.9rem;
+        padding: 8px 12px;
+    }
+}

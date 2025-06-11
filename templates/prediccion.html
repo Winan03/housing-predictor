@@ -7,6 +7,8 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/housing.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <!-- Enlace al archivo CSS del chatbot -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/chatbot.css') }}">
 </head>
 <body>
     <!-- Navegación -->
@@ -262,16 +264,49 @@
         </div>
     </div>
 
+    <!-- Contenedor del Chatbot -->
+    <div class="chatbot-container hidden" id="chatbot-container">
+        <div class="chatbot-header">
+            <h3>Asistente IA</h3>
+            <button class="close-button" id="close-chatbot"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="chatbot-messages" id="chatbot-messages">
+            <!-- Los mensajes se insertarán aquí por JavaScript -->
+            <div class="message-bubble bot">
+                ¡Hola! Soy el asistente de Predictor de Viviendas IA. ¿En qué puedo ayudarte hoy?
+            </div>
+        </div>
+        <div class="chatbot-input-area">
+            <input type="text" id="chatbot-input" placeholder="Escribe tu pregunta..." autocomplete="off">
+            <button id="send-button"><i class="fas fa-paper-plane"></i></button>
+        </div>
+    </div>
+
+    <!-- Botón flotante para abrir/cerrar -->
+    <button class="chatbot-toggle-button" id="chatbot-toggle">
+        <i class="fas fa-comments"></i>
+    </button>
+
     <!-- JavaScript -->
     <script>
+        // =====================================
+        // Funciones Globales y de la Página Principal (existentes)
+        // =====================================
+
         // Variables globales
-        let currentSection = 'location';
+        let currentSection = 'location'; // Asegúrate de que esta variable sea relevante para tu página de predicción si este JS se usa allí.
 
         // Inicialización
         document.addEventListener('DOMContentLoaded', function() {
             setupSectionToggle();
             setupFormValidation();
             console.log('Página de predicción cargada correctamente');
+
+            // Inicializar chatbot en la carga de la ventana, como estaba en tu index.html
+            const initialBotMessage = document.querySelector('.chatbot-messages .message-bubble.bot');
+            if (initialBotMessage) {
+                initialBotMessage.scrollIntoView({ behavior: 'smooth', block: 'end' });
+            }
         });
 
         // Configurar toggle de secciones
@@ -488,7 +523,8 @@
 
         // Limpiar formulario
         function clearForm() {
-            if (confirm('¿Está seguro de que desea limpiar todos los campos del formulario?')) {
+            // Usar modal de confirmación en lugar de confirm()
+            showConfirm('¿Está seguro de que desea limpiar todos los campos del formulario?', () => {
                 document.getElementById('predictionForm').reset();
                 document.getElementById('predictionResult').style.display = 'none';
                 
@@ -520,30 +556,88 @@
                 document.querySelectorAll('.error').forEach(el => el.classList.remove('error'));
                 
                 console.log('Formulario limpiado');
-            }
+            });
         }
 
         // Funciones de utilidad para modales
         function openModal(modalId) {
-            document.getElementById(modalId).style.display = 'block';
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.style.display = 'block';
+                // Add a class to body to prevent scrolling when modal is open
+                document.body.classList.add('modal-open');
+            }
         }
 
         function closeModal(modalId) {
-            document.getElementById(modalId).style.display = 'none';
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.style.display = 'none';
+                // Remove the class from body
+                document.body.classList.remove('modal-open');
+            }
         }
+
+        // Función para mostrar mensajes de error personalizados (reemplaza alert())
+        function showError(message) {
+            const errorModal = document.getElementById('errorModal');
+            const errorMessageContent = document.getElementById('errorMessageContent');
+            
+            if (errorMessageContent && errorModal) {
+                errorMessageContent.textContent = message;
+                openModal('errorModal');
+            } else {
+                // Fallback if modal elements are not found
+                console.error("Error modal elements not found, falling back to console log: " + message);
+            }
+        }
+
+        // Función para mostrar mensajes de confirmación personalizados (reemplaza confirm())
+        function showConfirm(message, callback) {
+            const confirmModal = document.getElementById('confirmModal');
+            const confirmMessageContent = document.getElementById('confirmMessageContent');
+            const confirmYesButton = document.getElementById('confirmYes');
+            const confirmNoButton = document.getElementById('confirmNo');
+
+            if (confirmMessageContent && confirmModal && confirmYesButton && confirmNoButton) {
+                confirmMessageContent.textContent = message;
+                
+                // Clear previous listeners to prevent multiple calls
+                confirmYesButton.onclick = null;
+                confirmNoButton.onclick = null;
+
+                confirmYesButton.onclick = () => {
+                    closeModal('confirmModal');
+                    if (typeof callback === 'function') {
+                        callback();
+                    }
+                };
+                confirmNoButton.onclick = () => {
+                    closeModal('confirmModal');
+                };
+                openModal('confirmModal');
+            } else {
+                // Fallback for confirm
+                if (window.confirm(message) && typeof callback === 'function') {
+                    callback();
+                }
+            }
+        }
+
 
         // Funciones de utilidad para loading
         function showLoading() {
-            document.getElementById('loadingOverlay').style.display = 'flex';
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            if (loadingOverlay) {
+                loadingOverlay.style.display = 'flex';
+            }
         }
 
         function hideLoading() {
-            document.getElementById('loadingOverlay').style.display = 'none';
-        }
-
-        // Mostrar errores
-        function showError(message) {
-            alert('Error: ' + message);
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            if (loadingOverlay) {
+                loadingOverlay.style.display = 'none';
+            }
         }
 
         // Cerrar modales al hacer clic fuera
@@ -551,10 +645,129 @@
             const modals = document.querySelectorAll('.modal');
             modals.forEach(modal => {
                 if (event.target === modal) {
-                    modal.style.display = 'none';
+                    closeModal(modal.id); // Use closeModal to handle body class
                 }
             });
         }
+
+        // =====================================
+        // Chatbot Functionality (integrado)
+        // =====================================
+        const chatbotContainer = document.getElementById('chatbot-container');
+        const chatbotToggle = document.getElementById('chatbot-toggle');
+        const closeChatbotButton = document.getElementById('close-chatbot');
+        const chatbotMessages = document.getElementById('chatbot-messages');
+        const chatbotInput = document.getElementById('chatbot-input');
+        const sendButton = document.getElementById('send-button');
+
+        // Toggle chatbot visibility
+        chatbotToggle.addEventListener('click', () => {
+            chatbotContainer.classList.toggle('hidden');
+            // Muestra u oculta el botón flotante dependiendo del estado del chatbot
+            if (chatbotContainer.classList.contains('hidden')) {
+                chatbotToggle.classList.remove('hidden'); 
+            } else {
+                chatbotToggle.classList.add('hidden'); 
+                chatbotInput.focus(); // Enfoca el input al abrir el chatbot
+                // Removed initial scrollToBottom here as addMessage will handle it
+            }
+        });
+
+        closeChatbotButton.addEventListener('click', () => {
+            chatbotContainer.classList.add('hidden');
+            chatbotToggle.classList.remove('hidden'); // Muestra el botón flotante al cerrar el chatbot
+        });
+
+        // Add a message to the chat display
+        function addMessage(message, sender) {
+            const messageBubble = document.createElement('div');
+            messageBubble.classList.add('message-bubble', sender);
+            
+            // Allow for markdown-like bolding (e.g., **text**)
+            let formattedMessage = message.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            
+            // Add line breaks for readability in long bot responses
+            formattedMessage = formattedMessage.replace(/\n/g, '<br>');
+
+            messageBubble.innerHTML = formattedMessage; // Use innerHTML for formatting
+
+            chatbotMessages.appendChild(messageBubble);
+            
+            // Scroll the newly added message into view
+            // Using requestAnimationFrame to ensure the scroll happens after render
+            requestAnimationFrame(() => {
+                messageBubble.scrollIntoView({ behavior: 'smooth', block: 'end' }); 
+            });
+        }
+
+        // Scroll to the bottom of the messages div (less critical with scrollIntoView on elements)
+        // function scrollToBottom() {
+        //     chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
+        // }
+
+        // Send message to chatbot API
+        async function sendMessage() {
+            const userMessage = chatbotInput.value.trim();
+            if (userMessage === '') return;
+
+            addMessage(userMessage, 'user');
+            chatbotInput.value = ''; // Clear input
+
+            // Add loading indicator
+            const loadingIndicator = document.createElement('div');
+            loadingIndicator.classList.add('loading-indicator');
+            loadingIndicator.textContent = 'Escribiendo...';
+            chatbotMessages.appendChild(loadingIndicator);
+            // No explicit scroll here, as addMessage for the user's message just handled it.
+            // The next scroll will happen when the bot's response is added.
+
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ message: userMessage })
+                });
+
+                const data = await response.json();
+                
+                // Remove loading indicator
+                if (chatbotMessages.contains(loadingIndicator)) {
+                    chatbotMessages.removeChild(loadingIndicator);
+                }
+
+                if (data.success) {
+                    addMessage(data.response, 'bot'); // Bot message added, this call handles its own scrollIntoView
+                } else {
+                    addMessage('Error: ' + (data.response || 'No se pudo obtener una respuesta.'), 'bot');
+                }
+            } catch (error) {
+                console.error('Error al comunicarse con el chatbot:', error);
+                // Remove loading indicator even on error
+                if (chatbotMessages.contains(loadingIndicator)) {
+                    chatbotMessages.removeChild(loadingIndicator);
+                }
+                addMessage('Lo siento, hubo un problema al conectar con el asistente. Intenta de nuevo más tarde.', 'bot');
+            }
+        }
+
+        // Event listeners for sending messages
+        sendButton.addEventListener('click', sendMessage);
+        chatbotInput.addEventListener('keypress', (event) => {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        // Initial bot greeting (already handled by DOMContentLoaded, so no need for window.onload)
+        // window.addEventListener('load', () => {
+        //     const initialBotMessage = document.querySelector('.chatbot-messages .message-bubble.bot');
+        //     if (initialBotMessage) {
+        //         initialBotMessage.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        //     }
+        // });
+
     </script>
 </body>
 </html>
