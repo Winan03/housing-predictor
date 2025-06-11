@@ -28,3 +28,4 @@ threadpoolctl
 tqdm
 tzdata
 xgboost
+gunicorn
