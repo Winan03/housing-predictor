@@ -31,3 +31,4 @@ xgboost
 gunicorn
 flask
 python-dotenv
+requests
