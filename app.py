@@ -17,23 +17,26 @@ from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
 import warnings
 from flask.json.provider import DefaultJSONProvider
 warnings.filterwarnings('ignore')
-from monitoring import calculate_psi_safe_percentiles
-from log_monitoring import check_logs
 
-# Importar la clase FAQChatbot desde chatbot.py
-from chatbot import FAQChatbot # Asegúrate de que chatbot.py esté en el mismo directorio
+from monitoring import calculate_psi_safe_percentiles, ModelMonitor, PredictionLog, DriftAlert
+from log_monitoring import check_logs_and_send_email
+from chatbot import FAQChatbot
 
-# Configurar logging
-logging.basicConfig(level=logging.INFO)
+# Configuración del logging de la aplicación Flask para escribir en 'app_logs.log'
+LOG_FILE_PATH = 'app_logs.log'
+file_handler = logging.FileHandler(LOG_FILE_PATH)
+file_handler.setLevel(logging.INFO)
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+file_handler.setFormatter(formatter)
+
+root_logger = logging.getLogger()
+root_logger.setLevel(logging.INFO)
+root_logger.addHandler(file_handler)
+
 logger = logging.getLogger(__name__)
 
-# Agregar estas importaciones al inicio de tu app.py (después de las existentes)
-from monitoring import ModelMonitor, PredictionLog, DriftAlert
-
-# Inicializar el monitor globalmente (agregar después de inicializar predictor)
+# Inicializar el monitor globalmente
 monitor = ModelMonitor()
-
-check_logs()
 
 app = Flask(__name__)
 
