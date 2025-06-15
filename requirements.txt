@@ -30,3 +30,4 @@ tzdata
 xgboost
 gunicorn
 flask
+python-dotenv

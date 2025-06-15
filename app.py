@@ -20,6 +20,11 @@ warnings.filterwarnings('ignore')
 from monitoring import calculate_psi_safe_percentiles
 from log_monitoring import check_logs_and_send_email
 
+from dotenv import load_dotenv
+
+# Cargar las variables de entorno desde el archivo .env
+load_dotenv()
+
 # Importar la clase FAQChatbot desde chatbot.py
 from chatbot import FAQChatbot # Asegúrate de que chatbot.py esté en el mismo directorio
 
