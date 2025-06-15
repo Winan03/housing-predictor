@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Reporte de Monitoreo</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/monitoring.css') }}">
+</head>
+<body>
+    <h1>📊 Reporte de Monitoreo</h1>
+
+    {% if report.error %}
+        <div class="error">
+            <p>❌ Error al generar el reporte: {{ report.error }}</p>
+        </div>
+    {% else %}
+        <!-- Resumen general -->
+        <section>
+            <h2>Resumen General</h2>
+            <p>Total de Predicciones: {{ report.resumen.total_predicciones }}</p>
+            <p>Promedio de Predicción: {{ report.resumen.promedio_prediccion }}k</p>
+
+            <h3>Modelos Usados:</h3>
+            <ul>
+                {% for modelo, cantidad in report.resumen.modelos_usados.items() %}
+                    <li>{{ modelo }}: {{ cantidad }}</li>
+                {% endfor %}
+            </ul>
+        </section>
+
+        <!-- Sección de alertas de drift -->
+        <section>
+            <h2>Alertas de Drift</h2>
+            <p>Total de Alertas: {{ report.drift.total_alertas }}</p>
+            <p>Críticas: {{ report.drift.criticas }}</p>
+
+            <h3>Métricas Afectadas:</h3>
+            <ul>
+                {% for metrica in report.drift.metricas_afectadas %}
+                    <li>{{ metrica }}</li>
+                {% endfor %}
+            </ul>
+        </section>
+
+        <!-- Sección de feedback -->
+        <section>
+            <h2>Feedback de Usuarios</h2>
+            <p>Total Feedback: {{ report.feedback.total_feedback }}</p>
+            <p>Tasa de Satisfacción: {{ report.feedback.satisfaccion * 100 }}%</p>
+
+            <h3>Comentarios:</h3>
+            <ul>
+                {% for comentario in report.feedback.comentarios %}
+                    <li><strong>{{ comentario.usuario }}</strong>: {{ comentario.mensaje }} (⭐ {{ comentario.rating }})</li>
+                {% endfor %}
+            </ul>
+        </section>
+    {% endif %}
+</body>
+</html>

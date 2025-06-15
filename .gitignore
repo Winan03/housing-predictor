@@ -1,0 +1,16 @@
+# Archivos de caché de Python
+__pycache__/
+*.pyc
+*.pyd
+*.pyo
+
+# Logs de tu aplicación (ya que se regeneran y son específicos de la ejecución)
+app_logs.log
+log_monitoring_errors.log
+
+# Archivos específicos de sistemas operativos
+.DS_Store
+Thumbs.db
+
+# Archivos de configuración sensible (si los tuvieras, por ejemplo, secretos o variables de entorno)
+.env

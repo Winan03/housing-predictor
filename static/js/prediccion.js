@@ -1,5 +1,5 @@
 // ============================================================================
-// HOUSING PREDICTOR - SCRIPT.JS (CORREGIDO)
+// HOUSING PREDICTOR - PREDICCION.JS (CORREGIDO)
 // Sistema de predicción de precios de vivienda
 // ============================================================================
 
@@ -249,7 +249,8 @@ async function predictPrice() {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                features: formData.features,
+                // IMPORTANTE: formData.features ahora es un objeto, no un array
+                features: formData.features, 
                 model: formData.model
             })
         });
@@ -289,42 +290,47 @@ function getFormData() {
             throw new Error('Elementos del formulario no encontrados');
         }
         
-        // Lista completa de características incluyendo neighborhood_cluster
+        // Lista completa de características (ahora usaremos esto para las claves del objeto)
+        // Asegúrate de que esta lista de featureNames coincida exactamente con las características
+        // que tu modelo espera en el orden correcto en el backend, incluyendo 'neighborhood_cluster'.
+        // Si 'neighborhood_cluster' es una característica que se genera en el backend a partir de otras,
+        // entonces no debería estar aquí o su valor debe ser '0' como placeholder si no está en el formulario.
         const featureNames = [
             'crim', 'zn', 'indus', 'chas', 'nox', 'rm', 
             'age', 'dis', 'rad', 'tax', 'ptratio', 'b', 'lstat',
-            'neighborhood_cluster'  // ¡CARACTERÍSTICA FALTANTE AGREGADA!
+            'neighborhood_cluster' 
         ];
         
-        const features = [];
-        const missingFeatures = [];
+        const features = {}; // <--- CAMBIO CLAVE: Inicializar como un OBJETO vacío
         
         for (const featureName of featureNames) {
             const input = form.querySelector(`[name="${featureName}"]`);
             
             if (!input) {
-                // Si no existe el campo, usar valor por defecto
+                // Si no existe el campo en el HTML, usar valor por defecto
                 const defaultValue = getDefaultValueForFeature(featureName);
-                features.push(defaultValue);
-                console.warn(`⚠️ Campo ${featureName} no encontrado, usando valor por defecto: ${defaultValue}`);
+                features[featureName] = defaultValue; // Asignar al OBJETO usando el nombre como clave
+                console.warn(`⚠️ Campo ${featureName} no encontrado en el formulario, usando valor por defecto: ${defaultValue}`);
                 continue;
             }
             
             const value = parseFloat(input.value);
             if (isNaN(value)) {
+                // Si el valor no es un número válido, puedes decidir cómo manejarlo.
+                // Aquí lanzamos un error como lo hacías.
                 throw new Error(`Valor inválido para ${featureName}: ${input.value}`);
             }
             
-            features.push(value);
+            features[featureName] = value; // Asignar al OBJETO usando el nombre como clave
         }
         
         console.log('📊 Características obtenidas:', {
-            total: features.length,
-            features: featureNames.map((name, idx) => ({ name, value: features[idx] }))
+            total: Object.keys(features).length, // Contar claves del objeto
+            features: features // El objeto de características tal como se enviará
         });
         
         return {
-            features: features,
+            features: features, // Ahora features es un objeto (diccionario)
             model: modelSelect.value,
             timestamp: new Date().toISOString()
         };
@@ -352,7 +358,7 @@ function getDefaultValueForFeature(featureName) {
         'ptratio': 15.3,
         'b': 396.9,
         'lstat': 4.98,
-        'neighborhood_cluster': 0  // Valor por defecto para cluster de vecindario
+        'neighborhood_cluster': 0 // Valor por defecto para cluster de vecindario
     };
     
     return defaults[featureName] || 0;
@@ -570,7 +576,7 @@ function createMetricsTable(metrics) {
             td.style.cssText = `
                 padding: 10px 12px;
                 border: 1px solid #e2e8f0;
-            `;
+                `;
             row.appendChild(td);
         });
         
@@ -701,7 +707,7 @@ function clearForm() {
             'ptratio': '15.3',
             'b': '396.9',
             'lstat': '4.98',
-            'neighborhood_cluster': '0'  // Valor por defecto para el cluster
+            'neighborhood_cluster': '0' // Valor por defecto para el cluster
         };
         
         Object.entries(defaultValues).forEach(([name, value]) => {

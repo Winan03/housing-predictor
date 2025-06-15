@@ -154,7 +154,7 @@ def advanced_outlier_removal(df, target_col='medv', method='isolation'):
                          zscore_outliers.astype(int))
         outliers = total_outliers >= 2
         
-        print(f"   📊 Método combinado:")
+        print(f"    Método combinado:")
         print(f"      - Isolation Forest: {iso_outliers.sum()}")
         print(f"      - Local Outlier Factor: {lof_outliers.sum()}")
         print(f"      - Z-score: {zscore_outliers.sum()}")
@@ -163,8 +163,8 @@ def advanced_outlier_removal(df, target_col='medv', method='isolation'):
     df_clean = df[~outliers].copy()
     removal_percentage = (outliers.sum() / len(df)) * 100
     
-    print(f"   ✅ Outliers removidos: {outliers.sum()} ({removal_percentage:.1f}%)")
-    print(f"   📏 Datos restantes: {len(df_clean)}")
+    print(f"    Outliers removidos: {outliers.sum()} ({removal_percentage:.1f}%)")
+    print(f"    Datos restantes: {len(df_clean)}")
     
     return df_clean
 
@@ -248,7 +248,7 @@ def train_enhanced_models():
     
     # 1. Cargar datos
     print("📊 Cargando dataset Boston Housing...")
-    url = "https://raw.githubusercontent.com/selva86/datasets/master/BostonHousing.csv"
+    url = "https://housing-data-ml.s3.us-east-2.amazonaws.com/HousingData.csv"
     df = pd.read_csv(url)
     print(f"   📏 Dataset cargado: {df.shape}")
     

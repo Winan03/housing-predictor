@@ -1,8 +1,10 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, Response
+import json
 import pandas as pd
 import numpy as np
 import joblib
 import os
+import math
 import logging
 import base64
 import io
@@ -13,7 +15,10 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
 import warnings
+from flask.json.provider import DefaultJSONProvider
 warnings.filterwarnings('ignore')
+from monitoring import calculate_psi_safe_percentiles
+from log_monitoring import check_logs
 
 # Importar la clase FAQChatbot desde chatbot.py
 from chatbot import FAQChatbot # Asegúrate de que chatbot.py esté en el mismo directorio
@@ -21,6 +26,14 @@ from chatbot import FAQChatbot # Asegúrate de que chatbot.py esté en el mismo 
 # Configurar logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Agregar estas importaciones al inicio de tu app.py (después de las existentes)
+from monitoring import ModelMonitor, PredictionLog, DriftAlert
+
+# Inicializar el monitor globalmente (agregar después de inicializar predictor)
+monitor = ModelMonitor()
+
+check_logs()
 
 app = Flask(__name__)
 
@@ -424,9 +437,10 @@ def prediccion_page():
 # API ENDPOINTS
 # =============================================================================
 
+# Reemplaza tu función api_predict actual con esta versión mejorada:
 @app.route('/api/predict', methods=['POST'])
 def api_predict():
-    """API endpoint para hacer predicciones"""
+    """API endpoint para hacer predicciones (versión con monitoreo)"""
     if not app_ready:
         return jsonify({
             'success': False,
@@ -478,19 +492,45 @@ def api_predict():
         # Calcular intervalo de confianza aproximado (±10%)
         confidence_lower = prediction * 0.9 * 1000
         confidence_upper = prediction * 1.1 * 1000
+        confidence_interval = {
+            'lower': f"${confidence_lower:,.2f}",
+            'upper': f"${confidence_upper:,.2f}"
+        }
         
-        return jsonify({
+        # === NUEVO: REGISTRAR PREDICCIÓN PARA MONITOREO ===
+        try:
+            # Crear diccionario de features para el log
+            features_dict = dict(zip(expected_features, features))
+            
+            prediction_log = PredictionLog(
+                timestamp=datetime.now(),
+                features=features_dict,
+                prediction=float(prediction),
+                model_used=model_type,
+                confidence_interval=confidence_interval
+            )
+            
+            prediction_id = monitor.log_prediction(prediction_log)
+            
+        except Exception as monitor_error:
+            logger.warning(f"Error registrando predicción para monitoreo: {str(monitor_error)}")
+            prediction_id = None
+        
+        response_data = {
             'success': True,
             'prediction': float(prediction),
             'prediction_thousands': f"{prediction:.2f}k",
             'formatted_price': formatted_price,
-            'confidence_interval': {
-                'lower': f"${confidence_lower:,.2f}",
-                'upper': f"${confidence_upper:,.2f}"
-            },
+            'confidence_interval': confidence_interval,
             'model_used': model_type,
             'timestamp': datetime.now().isoformat()
-        })
+        }
+        
+        # Agregar ID de predicción si el monitoreo funcionó
+        if prediction_id:
+            response_data['prediction_id'] = prediction_id
+        
+        return jsonify(response_data)
         
     except Exception as e:
         logger.error(f"Error en predicción: {str(e)}")
@@ -498,6 +538,7 @@ def api_predict():
             'success': False,
             'error': f'Error en predicción: {str(e)}'
         }), 400
+
 
 @app.route('/api/chat', methods=['POST'])
 def api_chat():
@@ -716,6 +757,430 @@ def utility_processor():
         app_ready=app_ready,
         models_count=len(predictor.models) if app_ready else 0,
         current_year=datetime.now().year
+    )
+
+# =============================================================================
+# NUEVAS RUTAS PARA MONITOREO
+# =============================================================================
+
+class SafeJSONProvider(DefaultJSONProvider):
+    def dumps(self, obj, **kwargs):
+        def sanitize(obj):
+            if isinstance(obj, float):
+                if math.isinf(obj):
+                    return 9999.0 if obj > 0 else -9999.0
+                elif math.isnan(obj):
+                    return 0.0
+            elif isinstance(obj, dict):
+                return {k: sanitize(v) for k, v in obj.items()}
+            elif isinstance(obj, list):
+                return [sanitize(v) for v in obj]
+            return obj
+
+        obj = sanitize(obj)
+        return json.dumps(obj, **kwargs)
+
+    def loads(self, s, **kwargs):
+        return json.loads(s, **kwargs)
+    
+app.json_provider_class = SafeJSONProvider
+app.json = app.json_provider_class(app)  # ¡IMPORTANTE!
+
+# =============================================================================
+# ALTERNATIVE: SANITIZE DATA BEFORE SENDING TO FRONTEND
+# =============================================================================
+
+def sanitize_numeric_values(data):
+    """Recursively sanitize numeric values in a dictionary or list"""
+    if isinstance(data, dict):
+        return {key: sanitize_numeric_values(value) for key, value in data.items()}
+    elif isinstance(data, list):
+        return [sanitize_numeric_values(item) for item in data]
+    elif isinstance(data, float):
+        if math.isinf(data):
+            return 9999.0 if data > 0 else -9999.0  # ✅ <- Asegúrate de esto
+        elif math.isnan(data):
+            return 0.0
+        return data
+    else:
+        return data
+
+# =============================================================================
+# FIX THE ROOT CAUSE: UPDATE PSI CALCULATION
+# =============================================================================
+
+def calculate_psi_safe(baseline_dist, current_dist, epsilon=1e-8):
+    """
+    Calcular PSI (Population Stability Index) de forma segura, evitando valores infinitos.
+    """
+    import numpy as np
+
+    baseline_dist = np.array(baseline_dist) + epsilon
+    current_dist = np.array(current_dist) + epsilon
+
+    baseline_dist = baseline_dist / np.sum(baseline_dist)
+    current_dist = current_dist / np.sum(current_dist)
+
+    baseline_dist = np.nan_to_num(baseline_dist, nan=epsilon, posinf=epsilon, neginf=epsilon)
+    current_dist = np.nan_to_num(current_dist, nan=epsilon, posinf=epsilon, neginf=epsilon)
+
+    psi = np.sum((current_dist - baseline_dist) * np.log(current_dist / baseline_dist))
+
+    # Limitar PSI para evitar valores extremos
+    max_psi = 10.0
+    if np.isnan(psi) or np.isinf(psi):
+        psi = max_psi
+
+    return float(psi)
+
+@app.route('/monitoreo')
+def monitoreo_page():
+    """Página del dashboard de monitoreo"""
+    try:
+        if not app_ready:
+            return render_template('error.html', 
+                                   error="Los modelos de predicción no están disponibles."), 503
+        
+        # Obtener estadísticas de monitoreo básicas
+        try:
+            recent_predictions = len(monitor.get_recent_predictions(7))
+            drift_alerts = len(monitor.get_drift_alerts(7))
+            feedback_summary = monitor.get_user_feedback_summary(30)
+        except Exception as e:
+            logger.warning(f"Error obteniendo estadísticas iniciales: {str(e)}")
+            recent_predictions = 0
+            drift_alerts = 0
+            feedback_summary = {
+                'total_feedback': 0,
+                'avg_rating': 0,
+                'positive_feedback': 0,
+                'satisfaction_rate': 0
+            }
+        
+        context = {
+            'recent_predictions': recent_predictions,
+            'drift_alerts': drift_alerts,
+            'feedback_summary': feedback_summary,
+            'app_ready': app_ready,
+            'current_year': datetime.now().year,
+            'models_count': len(predictor.models) if app_ready else 0
+        }
+        
+        return render_template('monitoreo.html', **context)
+        
+    except Exception as e:
+        logger.error(f"Error en página de monitoreo: {str(e)}")
+        return render_template('error.html', 
+                               error=f"Error al cargar monitoreo: {str(e)}"), 500
+
+@app.route('/reporte')
+def reporte_page():
+    """Página de reportes detallados"""
+    try:
+        if not app_ready:
+            return render_template('error.html', 
+                                   error="Los modelos de predicción no están disponibles."), 503
+        
+        report = monitor.generate_monitoring_report()
+        
+        if not isinstance(report, dict):
+            logger.error("❌ Reporte no tiene formato válido (se esperaba un dict)")
+            return render_template('error.html', 
+                                   error="El reporte no está disponible en este momento."), 500
+
+        # Verifica que todas las claves necesarias estén presentes
+        for clave in ['resumen', 'drift', 'feedback']:
+            if clave not in report:
+                logger.error(f"❌ El reporte no contiene la sección requerida: {clave}")
+                return render_template('error.html', 
+                                       error=f"El reporte está incompleto: falta {clave}."), 500
+        
+        context = {
+            'report': report,
+            'app_ready': True
+        }
+        
+        return render_template('reporte.html', **context)
+        
+    except Exception as e:
+        logger.error(f"Error en página de reportes: {str(e)}")
+        return render_template('error.html', 
+                               error=f"Error al cargar reportes: {str(e)}"), 500
+
+
+# =============================================================================
+# APIs DE MONITOREO
+# =============================================================================
+
+@app.route('/api/monitor/prediction', methods=['POST'])
+def api_monitor_prediction():
+    """API para registrar una predicción para monitoreo"""
+    try:
+        data = request.json
+        
+        # Crear log de predicción
+        prediction_log = PredictionLog(
+            timestamp=datetime.now(),
+            features=data.get('features', {}),
+            prediction=data.get('prediction', 0.0),
+            model_used=data.get('model_used', 'Unknown'),
+            confidence_interval=data.get('confidence_interval'),
+            actual_value=data.get('actual_value')
+        )
+        
+        # Registrar en el monitor
+        prediction_id = monitor.log_prediction(prediction_log)
+        
+        return jsonify({
+            'success': True,
+            'prediction_id': prediction_id,
+            'message': 'Predicción registrada para monitoreo'
+        })
+        
+    except Exception as e:
+        logger.error(f"Error registrando predicción: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/monitor/feedback', methods=['POST'])
+def api_monitor_feedback():
+    """API para registrar feedback del usuario"""
+    try:
+        data = request.json
+        
+        prediction_id = data.get('prediction_id')
+        rating = data.get('rating')
+        feedback_text = data.get('feedback_text')
+        actual_price = data.get('actual_price')
+        
+        if not prediction_id or rating is None:
+            return jsonify({
+                'success': False,
+                'error': 'prediction_id y rating son requeridos'
+            }), 400
+        
+        # Registrar feedback
+        monitor.log_user_feedback(prediction_id, rating, feedback_text, actual_price)
+        
+        return jsonify({
+            'success': True,
+            'message': 'Feedback registrado exitosamente'
+        })
+        
+    except Exception as e:
+        logger.error(f"Error registrando feedback: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/monitor/drift-check', methods=['POST'])
+def api_drift_check():
+    """API para verificar drift en nuevos datos"""
+    try:
+        data = request.json
+        
+        # Convertir datos a DataFrame
+        if 'data' not in data:
+            return jsonify({
+                'success': False,
+                'error': 'Se requieren datos para verificar drift'
+            }), 400
+        
+        new_data = pd.DataFrame(data['data'])
+        
+        # Detectar drift de datos
+        data_alerts = monitor.detect_data_drift(new_data)
+        
+        # Si hay un modelo disponible, también verificar drift de rendimiento
+        performance_alerts = []
+        if 'targets' in data and len(predictor.models) > 0:
+            model = list(predictor.models.values())[0]  # Usar primer modelo disponible
+            targets = np.array(data['targets'])
+            performance_alerts = monitor.detect_performance_drift(model, new_data, targets)
+        
+        total_alerts = data_alerts + performance_alerts
+        
+        return jsonify({
+            'success': True,
+            'drift_detected': len(total_alerts) > 0,
+            'alerts_count': len(total_alerts),
+            'data_alerts': len(data_alerts),
+            'performance_alerts': len(performance_alerts),
+            'severity_breakdown': {
+                'high': len([a for a in total_alerts if a.severity == 'high']),
+                'medium': len([a for a in total_alerts if a.severity == 'medium']),
+                'low': len([a for a in total_alerts if a.severity == 'low'])
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Error verificando drift: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+# =============================================================================
+# UPDATED API ROUTE WITH DATA SANITIZATION
+# =============================================================================
+
+@app.route('/api/monitor/stats')
+def api_monitor_stats():
+    try:
+        recent_predictions = monitor.get_recent_predictions(7)
+        performance_history = monitor.get_performance_history(30)
+        drift_alerts = monitor.get_drift_alerts(7)
+        feedback_summary = monitor.get_user_feedback_summary(30)
+
+        print("✅ Recolección de datos completada")
+
+        # Convertir a dict si es un DataFrame
+        if hasattr(drift_alerts, 'to_dict'):
+            drift_alerts_dict = drift_alerts.head(3).to_dict('records') if not drift_alerts.empty else []
+        else:
+            drift_alerts_dict = drift_alerts[:3] if drift_alerts else []
+
+        stats = {
+            'recent_predictions': {
+                'count': len(recent_predictions),
+                'last_prediction': recent_predictions.iloc[0]['timestamp'] if not recent_predictions.empty else None
+            },
+            'performance_metrics': {
+                'metrics_count': len(performance_history),
+                'latest_metrics': performance_history.head(5).to_dict('records') if not performance_history.empty else []
+            },
+            'drift_status': {
+                'total_alerts': len(drift_alerts),
+                'critical_alerts': len(drift_alerts[drift_alerts['severity'] == 'high']) if hasattr(drift_alerts, 'empty') and not drift_alerts.empty else 0,
+                'recent_alerts': drift_alerts_dict
+            },
+            'user_feedback': feedback_summary
+        }
+
+        print("📊 Estadísticas recopiladas:", stats)
+
+        sanitized_stats = sanitize_numeric_values(stats)
+
+        return jsonify({
+            'success': True,
+            'stats': sanitized_stats,
+            'timestamp': datetime.now().isoformat()
+        })
+
+    except Exception as e:
+        print("❌ Error en /api/monitor/stats:", str(e))
+        logger.error(f"Error en /api/monitor/stats: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@app.route('/api/monitor/plots')
+def api_monitor_plots():
+    """API para generar gráficos de monitoreo"""
+    try:
+        plots = monitor.generate_monitoring_plots()
+        
+        return jsonify({
+            'success': True,
+            'plots': plots,
+            'plot_count': len(plots),
+            'timestamp': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        logger.error(f"Error generando gráficos de monitoreo: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/monitor/report')
+def api_monitor_report():
+    """API para generar reporte completo"""
+    try:
+        report = monitor.generate_monitoring_report()
+        
+        return jsonify({
+            'success': True,
+            'report': report,
+            'timestamp': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        logger.error(f"Error generando reporte: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+# =============================================================================
+# MODIFICACIONES A LA FUNCIÓN DE PREDICCIÓN EXISTENTE
+# =============================================================================
+
+
+# =============================================================================
+# FUNCIÓN DE INICIALIZACIÓN MODIFICADA
+# =============================================================================
+
+def initialize_app():
+    """Inicializar la aplicación cargando los modelos y configurando monitoreo"""
+    global app_ready, monitor
+    try:
+        print("🚀 Inicializando aplicación Housing Predictor...")
+        logger.info("Iniciando carga de modelos...")
+        
+        success = predictor.load_trained_models()
+        if success and predictor.is_ready():
+            app_ready = True
+            
+            # === NUEVO: CONFIGURAR MONITOREO ===
+            try:
+                # Si tienes datos de referencia guardados, cargarlos aquí
+                # Por ejemplo, si guardaste los datos de entrenamiento:
+                reference_data_path = 'models/reference_data.pkl'
+                baseline_metrics_path = 'models/baseline_metrics.pkl'
+                
+                if os.path.exists(reference_data_path) and os.path.exists(baseline_metrics_path):
+                    reference_data = joblib.load(reference_data_path)
+                    baseline_metrics = joblib.load(baseline_metrics_path)
+                    monitor.set_reference_data(reference_data, baseline_metrics)
+                    print("✅ Sistema de monitoreo configurado con datos de referencia")
+                else:
+                    print("⚠️ Datos de referencia no encontrados - monitoreo funcionará sin baseline")
+                    
+            except Exception as monitor_error:
+                logger.warning(f"Error configurando monitoreo: {str(monitor_error)}")
+                print("⚠️ Monitoreo iniciado sin configuración completa")
+            
+            print("✅ Aplicación lista!")
+            print(f"📊 Modelos cargados: {predictor.get_available_models()}")
+            logger.info("Aplicación inicializada correctamente")
+        else:
+            print("❌ Error: No se pudieron cargar los modelos")
+            logger.error("Fallo en la carga de modelos")
+            app_ready = False
+    except Exception as e:
+        print(f"❌ Error inicializando aplicación: {str(e)}")
+        logger.error(f"Error en inicialización: {str(e)}")
+        app_ready = False
+
+# =============================================================================
+# CONTEXT PROCESSOR ACTUALIZADO
+# =============================================================================
+
+@app.context_processor
+def utility_processor():
+    """Funciones de utilidad disponibles en todas las plantillas"""
+    return dict(
+        app_ready=app_ready,
+        models_count=len(predictor.models) if app_ready else 0,
+        current_year=datetime.now().year,
+        monitor_available=True  # Nuevo: indicar que el monitoreo está disponible
     )
 
 if __name__ == "__main__":

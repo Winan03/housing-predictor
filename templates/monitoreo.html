@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Monitoreo - Predicción de Viviendas</title>
+    <!-- Enlace a Tailwind CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <!-- Enlace a tu CSS personalizado para el monitoreo -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/monitoring.css') }}">
+</head>
+<body class="bg-gray-100 text-gray-800">
+    <nav class="bg-blue-600 p-4 shadow-md">
+        <div class="container mx-auto flex justify-between items-center">
+            <a href="/" class="text-white text-2xl font-bold">🏠 Predicción de Viviendas</a>
+            <div>
+                <a href="/prediccion" class="text-white hover:text-blue-200 mr-4">Realizar Predicción</a>
+                <a href="/monitoreo" class="text-white hover:text-blue-200 font-bold">Dashboard de Monitoreo</a>
+                <a href="/reporte" class="text-white hover:text-blue-200 ml-4">Reportes</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mx-auto my-8 p-4">
+        <h1 class="text-4xl font-bold text-center text-blue-700 mb-8">Dashboard de Monitoreo del Modelo</h1>
+
+        <!-- Estado del Sistema -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            <div class="card">
+                <h2 class="text-xl font-semibold text-blue-600 mb-4">Estado General del Sistema</h2>
+                <div class="space-y-2">
+                    <p>Estado: <span id="system-health" class="font-bold">Cargando...</span></p>
+                    <p>Predicciones recientes (7 días): <span id="recent-predictions" class="font-bold">Cargando...</span></p>
+                    <p>Alertas de Drift (7 días): <span id="drift-alerts-count" class="font-bold">Cargando...</span></p>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2 class="text-xl font-semibold text-blue-600 mb-4">Resumen de Feedback de Usuarios</h2>
+                <div class="space-y-2">
+                    <p>Total Feedback: <span id="feedback-total" class="font-bold">Cargando...</span></p>
+                    <p>Rating Promedio: <span id="feedback-avg-rating" class="font-bold">Cargando...</span></p>
+                    <p>Feedback Positivo: <span id="feedback-positive" class="font-bold">Cargando...</span></p>
+                    <p>Tasa de Satisfacción: <span id="feedback-satisfaction" class="font-bold">Cargando...</span></p>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2 class="text-xl font-semibold text-blue-600 mb-4">Acciones de Monitoreo Manual</h2>
+                <div class="space-y-2">
+                    <button id="checkPerformanceDrift" class="btn-primary w-full">
+                        🔍 Verificar Drift de Rendimiento
+                    </button>
+                    <button id="checkDataDrift" class="btn-secondary w-full">
+                        📊 Verificar Drift de Datos
+                    </button>
+                </div>
+                <div id="drift-status" class="status-message mt-4" style="display: none;"></div>
+                <p class="text-xs text-gray-500 mt-2">Nota: En producción, estas verificaciones se ejecutarían automáticamente.</p>
+            </div>
+        </div>
+
+        <!-- Gráficos de Rendimiento -->
+        <div class="card mb-8">
+            <h2 class="text-xl font-semibold text-blue-600 mb-4">📈 Historial de Rendimiento del Modelo</h2>
+            <div id="performance-plot" class="plot-container">
+                <div class="loading-spinner">
+                    <div class="spinner"></div>
+                    <p>Cargando gráfico de rendimiento...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Análisis de Feedback -->
+        <div class="card mb-8">
+            <h2 class="text-xl font-semibold text-blue-600 mb-4">💬 Análisis de Feedback de Usuarios</h2>
+            <div id="feedback-plot" class="plot-container">
+                <div class="loading-spinner">
+                    <div class="spinner"></div>
+                    <p>Cargando gráfico de feedback...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Alertas de Drift -->
+        <div class="card mb-8">
+            <h2 class="text-xl font-semibold text-blue-600 mb-4">⚠️ Alertas de Drift Recientes</h2>
+            <div id="drift-alerts-list" class="overflow-x-auto">
+                <div class="loading-spinner">
+                    <div class="spinner"></div>
+                    <p>Cargando alertas...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Información adicional -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div class="card">
+                <h2 class="text-xl font-semibold text-blue-600 mb-4">ℹ️ Información del Sistema</h2>
+                <div class="space-y-2 text-sm">
+                    <p><strong>Modelos Disponibles:</strong> {{ models_count if app_ready else 0 }}</p>
+                    <p><strong>Estado de la App:</strong> 
+                        {% if app_ready %}
+                            <span class="text-green-600 font-semibold">✅ Operativa</span>
+                        {% else %}
+                            <span class="text-red-600 font-semibold">❌ Fuera de Servicio</span>
+                        {% endif %}
+                    </p>
+                    <p><strong>Último Refresh:</strong> <span id="last-refresh">-</span></p>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2 class="text-xl font-semibold text-blue-600 mb-4">🔄 Control de Actualización</h2>
+                <div class="space-y-2">
+                    <button id="refreshData" class="btn-primary w-full">
+                        🔄 Actualizar Datos
+                    </button>
+                    <button id="toggleAutoRefresh" class="btn-secondary w-full">
+                        ⏱️ Auto-refresh: <span id="auto-refresh-status">ON</span>
+                    </button>
+                    <p class="text-xs text-gray-500">Los datos se actualizan automáticamente cada minuto</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-gray-800 text-white text-center p-4 mt-8">
+        <p>&copy; {{ current_year }} Predicción de Precios de Viviendas. Todos los derechos reservados.</p>
+    </footer>
+
+    <!-- JavaScript para el monitoreo -->
+    <script src="{{ url_for('static', filename='js/monitoringScript.js') }}"></script>
+</body>
+</html>
