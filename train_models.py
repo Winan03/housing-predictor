@@ -288,7 +288,7 @@ def train_enhanced_models():
     
     # 1. Cargar datos
     print("📊 Cargando dataset Boston Housing...")
-    url = "https://housing-data-ml.s3.us-east-2.amazonaws.com/HousingData.csv"
+    url = "https://raw.githubusercontent.com/selva86/datasets/master/BostonHousing.csv"
     df = pd.read_csv(url)
     print(f"   📏 Dataset cargado: {df.shape}")
     
